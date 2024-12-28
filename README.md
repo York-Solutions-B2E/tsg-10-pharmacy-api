@@ -226,6 +226,166 @@ TBD
 # Medication Inventory API
 [Back to Table of Contents](#table-of-contents)
 
+### Create One MedInventory
+**POST** - `/api/med-inventory/`
+**Status Code** `201 Created`
+
+**Request:**
+```json
+{
+"medName": "Aspirin",
+"stockCount": 100,
+"deliveryDate": "2025-01-10"
+}
+```
+medName: String (required, name of the medicine)  
+stockCount: Integer (required, must be >= 0)  
+deliveryDate: String (optional, format: YYYY-MM-DD)  
+
+**Response:**
+```json
+{
+"id": 1,
+"medName": "Aspirin",
+"stockCount": 100,
+"deliveryDate": "2025-01-10"
+}
+```
+
+id: Long (database-generated ID)  
+medName: String  
+stockCount: Integer  
+deliveryDate: String (nullable if not set)  
+
+### Create Many MedInventories
+**POST** - `/api/med-inventory/bulk`
+**Status Code** `201 Created`
+
+**Request:**
+
+```json
+[{
+"medName": "MedA",
+"stockCount": 50,
+"deliveryDate": "2024-12-31"
+},
+{
+"medName": "MedB",
+"stockCount": 75
+}]
+```
+Accepts an array of MedInventoryRequest objects.
+
+**Response:**
+
+```json
+[{
+"id": 1,
+"medName": "MedA",
+"stockCount": 50,
+"deliveryDate": "2024-12-31"
+},
+{
+"id": 2,
+"medName": "MedB",
+"stockCount": 75,
+"deliveryDate": null
+}]
+```
+
+Returns an array of created MedInventoryResponse objects, each with their newly assigned id.
+
+### Read All MedInventories
+**GET** - `/api/med-inventory/`
+**Status Code:** `200 OK`
+
+**Request:**
+No payload (query parameters optional, if any).
+
+**Response Body Example:**
+
+```json
+[{
+"id": 1,
+"medName": "Aspirin",
+"stockCount": 100,
+"deliveryDate": "2025-01-10"
+},
+{
+"id": 2,
+"medName": "MedB",
+"stockCount": 75,
+"deliveryDate": null
+}]
+```
+
+Array of all MedInventory records currently stored, empty array [] if none exist.
+
+### Read One MedInventory by ID
+**GET** - `/api/med-inventory/{id}`
+**Status Code:** `200 OK`
+
+**Request:**
+No payload.
+
+**Path Variable:** `{id}` (Long, required)
+
+**Response Body:**
+
+```json
+{
+"id": 1,
+"medName": "Aspirin",
+"stockCount": 100,
+"deliveryDate": "2025-01-10"
+}
+```
+
+TODO: Decide how API should respond if the specified {id} does not exist.
+
+### Update One MedInventory by ID
+**PUT** - `/api/med-inventory/{id}`
+**Status Code:** `200 OK`
+
+**Request:**
+```json
+{
+"medName": "Tylenol",
+"stockCount": 50,
+"deliveryDate": "2025-02-15"
+}
+```
+
+**Path Variable:** `{id}` (Long, required)
+Body: MedInventoryRequest with updated fields.
+
+**Response:**
+
+```json
+{
+"id": 1,
+"medName": "Tylenol",
+"stockCount": 50,
+"deliveryDate": "2025-02-15"
+}
+```
+
+TODO: Decide how API should respond if the specified {id} does not exist.
+
+### Delete One MedInventory by ID
+**DELETE** - `/api/med-inventory/{id}`
+**Status Code:** `204 No Content`
+
+**Request:**
+No payload.
+
+**Path Variable:** `{id}` (Long, required)
+
+**Response:**
+No payload (empty response body).
+
+TODO: Decide how API should respond if the specified {id} does not exist.
+
 # Prescription Management API
 [Back to Table of Contents](#table-of-contents)
 
