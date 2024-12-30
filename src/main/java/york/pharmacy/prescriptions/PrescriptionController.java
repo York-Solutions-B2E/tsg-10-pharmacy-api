@@ -1,0 +1,48 @@
+package york.pharmacy.prescriptions;
+
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import york.pharmacy.prescriptions.dto.PrescriptionRequest;
+import york.pharmacy.prescriptions.dto.PrescriptionResponse;
+import york.pharmacy.prescriptions.dto.PrescriptionStatusRequest;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/prescriptions")
+@RequiredArgsConstructor
+public class PrescriptionController {
+
+    private final PrescriptionService prescriptionService;
+
+    // create a new prescription
+    @PostMapping
+    public ResponseEntity<PrescriptionResponse> createPrescription(@Valid @RequestBody PrescriptionRequest prescriptionRequest) {
+        PrescriptionResponse prescriptionResponse = prescriptionService.addPrescription(prescriptionRequest);
+        return new ResponseEntity<>(prescriptionResponse, HttpStatus.CREATED);
+    }
+
+    // get all prescriptions
+    @GetMapping
+    public ResponseEntity<List<PrescriptionResponse>> getAllPrescriptions() {
+        List<PrescriptionResponse> prescriptionResponses = prescriptionService.getAllPrescriptions();
+        return new ResponseEntity<>(prescriptionResponses, HttpStatus.OK);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<PrescriptionResponse> getPrescriptionById(@PathVariable Long id) {
+        PrescriptionResponse prescriptionResponse = prescriptionService.getPrescriptionById(id);
+        return new ResponseEntity<>(prescriptionResponse, HttpStatus.OK);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<PrescriptionResponse> updatePrescription(@PathVariable Long id, @Valid @RequestBody PrescriptionStatusRequest prescriptionStatusRequest) {
+        PrescriptionResponse prescriptionResponse = prescriptionService.updatePrescription(id, prescriptionStatusRequest);
+        return new ResponseEntity<>(prescriptionResponse, HttpStatus.OK);
+    }
+
+
+}
