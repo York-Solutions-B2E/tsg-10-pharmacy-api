@@ -45,7 +45,7 @@ TBD
 # Endpoint Reference
 [Back to Table of Contents](#table-of-contents)
 
-### Medicine API - [View the Medicine API Reference File](./ApiReference/MedicineReference.md)
+
 
 # Entity Relationship Diagram
 [Back to Table of Contents](#table-of-contents)
