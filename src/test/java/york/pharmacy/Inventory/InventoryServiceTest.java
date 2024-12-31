@@ -1,7 +1,8 @@
-// InventoryServiceTest.java
-package york.pharmacy.Inventory;
+package york.pharmacy.inventory;
 
-import york.pharmacy.Inventory.dto.InventoryRequest;
+import york.pharmacy.inventory.dto.InventoryRequest;
+import york.pharmacy.inventory.dto.InventoryResponse;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -24,35 +25,54 @@ class InventoryServiceTest {
     @InjectMocks
     private InventoryService inventoryService;
 
+    // Common test data
+    private Long testId;
+    private Long testMedicineId;
+    private int testStockQuantity;
+    private Inventory testInventory;
+    private InventoryRequest testRequest;
+    private InventoryResponse expectedResponse;
+
+    @BeforeEach
+    void setUp() {
+        // Initialize test data
+        testId = 1L;
+        testMedicineId = 1L;
+        testStockQuantity = 10;
+
+        testInventory = Inventory.builder()
+                .id(testId)
+                .medicineId(testMedicineId)
+                .stockQuantity(testStockQuantity)
+                .build();
+
+        testRequest = InventoryRequest.builder()
+                .medicineId(testMedicineId)
+                .stockQuantity(testStockQuantity)
+                .build();
+
+        expectedResponse = InventoryResponse.builder()
+                .id(testId)
+                .medicineId(testMedicineId)
+                .stockQuantity(testStockQuantity)
+                .build();
+    }
+
     @Test
     @DisplayName("Should create a new Inventory successfully")
     void testCreateInventory() {
         // Given
-        Long medicineId = 1L;
-        int stockQuantity = 10;
-
-        Inventory mockEntity = Inventory.builder()
-                .id(1L)
-                .medicineId(medicineId)
-                .stockQuantity(stockQuantity)
-                .build();
-
         when(inventoryRepository.save(any(Inventory.class)))
-                .thenReturn(mockEntity);
-
-        InventoryRequest request = InventoryRequest.builder()
-                .medicineId(medicineId)
-                .stockQuantity(stockQuantity)
-                .build();
+                .thenReturn(testInventory);
 
         // When
-        Inventory result = inventoryService.createInventory(request);
+        InventoryResponse result = inventoryService.createInventory(testRequest);
 
         // Then
         assertNotNull(result);
-        assertEquals(1L, result.getId());
-        assertEquals(medicineId, result.getMedicineId());
-        assertEquals(stockQuantity, result.getStockQuantity());
+        assertEquals(testId, result.getId());
+        assertEquals(testMedicineId, result.getMedicineId());
+        assertEquals(testStockQuantity, result.getStockQuantity());
         verify(inventoryRepository, times(1)).save(any(Inventory.class));
     }
 
@@ -60,32 +80,30 @@ class InventoryServiceTest {
     @DisplayName("Should get an existing Inventory by ID")
     void testGetInventoryById() {
         // Given
-        Long id = 1L;
-        Inventory mockEntity = Inventory.builder()
-                .id(id)
-                .medicineId(1L)
-                .stockQuantity(5)
-                .build();
-
-        when(inventoryRepository.findById(id)).thenReturn(Optional.of(mockEntity));
+        when(inventoryRepository.findById(testId))
+                .thenReturn(Optional.of(testInventory));
 
         // When
-        Inventory result = inventoryService.getInventoryById(id);
+        InventoryResponse result = inventoryService.getInventoryById(testId);
 
         // Then
         assertNotNull(result);
-        assertEquals(1L, result.getMedicineId());
-        verify(inventoryRepository, times(1)).findById(id);
+        assertEquals(testMedicineId, result.getMedicineId());
+        verify(inventoryRepository, times(1)).findById(testId);
     }
 
     @Test
     @DisplayName("Should retrieve all Inventory entries")
     void testGetAllInventories() {
         // Given
-        Inventory i1 = Inventory.builder().id(1L).medicineId(1L).stockQuantity(10).build();
-        Inventory i2 = Inventory.builder().id(2L).medicineId(2L).stockQuantity(20).build();
+        Inventory secondInventory = Inventory.builder()
+                .id(2L)
+                .medicineId(2L)
+                .stockQuantity(20)
+                .build();
 
-        when(inventoryRepository.findAll()).thenReturn(Arrays.asList(i1, i2));
+        when(inventoryRepository.findAll())
+                .thenReturn(Arrays.asList(testInventory, secondInventory));
 
         // When
         var results = inventoryService.getAllInventories();
@@ -93,6 +111,8 @@ class InventoryServiceTest {
         // Then
         assertNotNull(results);
         assertEquals(2, results.size());
+        assertEquals(testMedicineId, results.get(0).getMedicineId());
+        assertEquals(2L, results.get(1).getMedicineId());
         verify(inventoryRepository, times(1)).findAll();
     }
 
@@ -100,60 +120,60 @@ class InventoryServiceTest {
     @DisplayName("Should update an existing Inventory successfully")
     void testUpdateInventory() {
         // Given
-        Long existingId = 1L;
-        Inventory existingEntity = Inventory.builder()
-                .id(existingId)
-                .medicineId(1L)
-                .stockQuantity(5)
-                .build();
-
-        when(inventoryRepository.findById(existingId))
-                .thenReturn(Optional.of(existingEntity));
-        when(inventoryRepository.save(existingEntity))
-                .thenReturn(existingEntity);
-
         InventoryRequest updateRequest = InventoryRequest.builder()
                 .medicineId(2L)
-                .stockQuantity(10)
+                .stockQuantity(20)
                 .build();
 
+        Inventory updatedInventory = Inventory.builder()
+                .id(testId)
+                .medicineId(2L)
+                .stockQuantity(20)
+                .build();
+
+        when(inventoryRepository.findById(testId))
+                .thenReturn(Optional.of(testInventory));
+        when(inventoryRepository.save(any(Inventory.class)))
+                .thenReturn(updatedInventory);
+
         // When
-        Inventory result = inventoryService.updateInventory(existingId, updateRequest);
+        InventoryResponse result = inventoryService.updateInventory(testId, updateRequest);
 
         // Then
         assertNotNull(result);
         assertEquals(2L, result.getMedicineId());
-        assertEquals(10, result.getStockQuantity());
-        verify(inventoryRepository).findById(existingId);
-        verify(inventoryRepository).save(existingEntity);
+        assertEquals(20, result.getStockQuantity());
+        verify(inventoryRepository).findById(testId);
+        verify(inventoryRepository).save(any(Inventory.class));
     }
 
     @Test
     @DisplayName("Should delete an existing Inventory by ID")
     void testDeleteInventory() {
         // Given
-        when(inventoryRepository.existsById(1L)).thenReturn(true);
+        when(inventoryRepository.existsById(testId)).thenReturn(true);
 
         // When
-        inventoryService.deleteInventory(1L);
+        inventoryService.deleteInventory(testId);
 
         // Then
-        verify(inventoryRepository).existsById(1L);
-        verify(inventoryRepository).deleteById(1L);
+        verify(inventoryRepository).existsById(testId);
+        verify(inventoryRepository).deleteById(testId);
     }
 
     @Test
     @DisplayName("Should throw exception when deleting a non-existing Inventory")
     void testDeleteInventoryNotFound() {
         // Given
-        when(inventoryRepository.existsById(999L)).thenReturn(false);
+        Long nonExistingId = 999L;
+        when(inventoryRepository.existsById(nonExistingId)).thenReturn(false);
 
         // When/Then
         RuntimeException ex = assertThrows(RuntimeException.class,
-                () -> inventoryService.deleteInventory(999L));
+                () -> inventoryService.deleteInventory(nonExistingId));
 
-        assertEquals("Inventory not found with id: 999", ex.getMessage());
-        verify(inventoryRepository).existsById(999L);
-        verify(inventoryRepository, never()).deleteById(any());
+        assertEquals("Inventory not found with id: " + nonExistingId, ex.getMessage());
+        verify(inventoryRepository).existsById(nonExistingId);
+        verify(inventoryRepository, never()).deleteById(nonExistingId);
     }
 }

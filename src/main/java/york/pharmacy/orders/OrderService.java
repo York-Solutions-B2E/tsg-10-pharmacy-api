@@ -17,17 +17,17 @@ public class OrderService {
 
     // Create a single order
     public OrderResponse createOrder(OrderRequest orderRequest) {
-        Order order = OrderMapper.toEntity(orderRequest);
-        Order savedOrder = orderRepository.save(order);
+        Orders order = OrderMapper.toEntity(orderRequest);
+        Orders savedOrder = orderRepository.save(order);
         return OrderMapper.toResponse(savedOrder);
     }
 
     // Create a batch of orders
     public List<OrderResponse> batchCreateOrders(List<OrderRequest> orderRequests) {
-        List<Order> orders = orderRequests.stream()
+        List<Orders> orders = orderRequests.stream()
                 .map(OrderMapper::toEntity)
                 .collect(Collectors.toList());
-        List<Order> savedOrders = orderRepository.saveAll(orders);
+        List<Orders> savedOrders = orderRepository.saveAll(orders);
         return savedOrders.stream()
                 .map(OrderMapper::toResponse)
                 .collect(Collectors.toList());
@@ -43,21 +43,21 @@ public class OrderService {
 
     // Get an order by ID
     public OrderResponse getOrderById(Long id) {
-        Order order = orderRepository.findById(id)
+        Orders order = orderRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Order with ID " + id + " not found"));
         return OrderMapper.toResponse(order);
     }
 
     // Update an order by ID
     public OrderResponse updateOrder(Long id, OrderRequest orderRequest) {
-        Order order = orderRepository.findById(id)
+        Orders order = orderRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Order with ID " + id + " not found"));
 
         order.setMedicineId(orderRequest.getMedId());
         order.setQuantity(orderRequest.getQuantity());
         order.setDeliveryDate(orderRequest.getDeliveryDate());
         order.setStatus(OrderStatus.ORDERED); // Update status explicitly if needed
-        Order updatedOrder = orderRepository.save(order);
+        Orders updatedOrder = orderRepository.save(order);
         return OrderMapper.toResponse(updatedOrder);
     }
 

@@ -27,12 +27,12 @@ class OrderServiceTest {
     @InjectMocks
     private OrderService orderService;
 
-    private Order order;
+    private Orders order;
     private OrderRequest orderRequest;
 
     @BeforeEach
     void setUp() {
-        order = new Order(
+        order = new Orders(
                 1L,
                 "123456",
                 100,
@@ -53,7 +53,7 @@ class OrderServiceTest {
     @Test
     void testCreateOrder_Success() {
         // Arrange
-        when(orderRepository.save(any(Order.class))).thenReturn(order);
+        when(orderRepository.save(any(Orders.class))).thenReturn(order);
 
         // Act
         OrderResponse result = orderService.createOrder(orderRequest);
@@ -62,7 +62,7 @@ class OrderServiceTest {
         assertNotNull(result);
         assertEquals("123456", result.getMedId());
         assertEquals(100, result.getQuantity());
-        verify(orderRepository, times(1)).save(any(Order.class));
+        verify(orderRepository, times(1)).save(any(Orders.class));
     }
 
     /** Test: batchCreateOrders - Success */
@@ -70,7 +70,7 @@ class OrderServiceTest {
     void testBatchCreateOrders_Success() {
         // Arrange
         List<OrderRequest> orderRequests = List.of(orderRequest);
-        List<Order> orders = List.of(order);
+        List<Orders> orders = List.of(order);
         when(orderRepository.saveAll(anyList())).thenReturn(orders);
 
         // Act
@@ -135,7 +135,7 @@ class OrderServiceTest {
                 LocalDate.of(2024, 12, 28)
         );
 
-        Order updatedOrder = new Order(
+        Orders updatedOrder = new Orders(
                 1L,
                 "789012",
                 200,
@@ -146,7 +146,7 @@ class OrderServiceTest {
         );
 
         when(orderRepository.findById(1L)).thenReturn(Optional.of(order));
-        when(orderRepository.save(any(Order.class))).thenReturn(updatedOrder);
+        when(orderRepository.save(any(Orders.class))).thenReturn(updatedOrder);
 
         // Act
         OrderResponse result = orderService.updateOrder(1L, updatedRequest);
@@ -156,7 +156,7 @@ class OrderServiceTest {
         assertEquals("789012", result.getMedId());
         assertEquals(200, result.getQuantity());
         verify(orderRepository, times(1)).findById(1L);
-        verify(orderRepository, times(1)).save(any(Order.class));
+        verify(orderRepository, times(1)).save(any(Orders.class));
     }
 
     /** Test: deleteOrder - Success */

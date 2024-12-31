@@ -1,9 +1,9 @@
-package york.pharmacy.Inventory;
+package york.pharmacy.inventory;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import york.pharmacy.Inventory.dto.InventoryRequest;
-import york.pharmacy.Inventory.dto.InventoryResponse;
+import york.pharmacy.inventory.dto.InventoryRequest;
+import york.pharmacy.inventory.dto.InventoryResponse;
 
 import static org.junit.jupiter.api.Assertions.*;
 

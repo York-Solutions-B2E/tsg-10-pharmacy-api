@@ -6,8 +6,8 @@ import york.pharmacy.orders.dto.OrderResponse;
 public class OrderMapper {
 
     // Convert OrderRequest DTO to Order Entity
-    public static Order toEntity(OrderRequest orderRequest) {
-        Order order = new Order();
+    public static Orders toEntity(OrderRequest orderRequest) {
+        Orders order = new Orders();
         order.setMedicineId(orderRequest.getMedId());
         order.setQuantity(orderRequest.getQuantity());
         order.setDeliveryDate(orderRequest.getDeliveryDate());
@@ -16,7 +16,7 @@ public class OrderMapper {
     }
 
     // Convert Order Entity to OrderResponse DTO
-    public static OrderResponse toResponse(Order order) {
+    public static OrderResponse toResponse(Orders order) {
         OrderResponse response = new OrderResponse();
         response.setId(order.getId());
         response.setMedId(order.getMedicineId());

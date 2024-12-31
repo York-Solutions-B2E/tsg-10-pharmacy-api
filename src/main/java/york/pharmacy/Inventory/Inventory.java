@@ -1,5 +1,5 @@
 
-package york.pharmacy.Inventory;
+package york.pharmacy.inventory;
 
 import jakarta.persistence.*;
 import lombok.*;

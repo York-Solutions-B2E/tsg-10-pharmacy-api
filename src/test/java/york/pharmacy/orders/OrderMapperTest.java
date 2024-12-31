@@ -17,7 +17,7 @@ class OrderMapperTest {
         OrderRequest orderRequest = new OrderRequest("123456", 100, LocalDate.of(2024, 12, 27));
 
         // Act
-        Order order = OrderMapper.toEntity(orderRequest);
+        Orders order = OrderMapper.toEntity(orderRequest);
 
         // Assert
         assertNotNull(order);
@@ -30,7 +30,7 @@ class OrderMapperTest {
     @Test
     void testToResponse() {
         // Arrange
-        Order order = new Order(
+        Orders order = new Orders(
                 1L,
                 "123456",
                 100,

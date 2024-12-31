@@ -1,8 +1,8 @@
 
-package york.pharmacy.Inventory;
+package york.pharmacy.inventory;
 
-import york.pharmacy.Inventory.dto.InventoryRequest;
-import york.pharmacy.Inventory.dto.InventoryResponse;
+import york.pharmacy.inventory.dto.InventoryRequest;
+import york.pharmacy.inventory.dto.InventoryResponse;
 
 public class InventoryMapper {
     public static Inventory toEntity(InventoryRequest request) {
