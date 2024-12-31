@@ -66,7 +66,7 @@ TBD
 **Response:**
 ```json
 {
-    "id": "123456",
+    "id": 123456,
     "medId": "123456",
     "quantity": 100,
     "deliveryDate": "2024-12-27",
@@ -103,7 +103,7 @@ TBD
 ```json
 [
     {
-        "id": "123456",
+        "id": 123456,
         "medId": "123456",
         "quantity": 100,
         "deliveryDate": "2024-12-27",
@@ -112,7 +112,7 @@ TBD
         "updatedAt": "2024-12-26T10:00:00"
     },
     {
-        "id": "654321",
+        "id": 654321,
         "medId": "654321",
         "quantity": 50,
         "deliveryDate": "2024-12-30",
@@ -137,7 +137,7 @@ TBD
 ```json
 [
     {
-        "id": "123456",
+        "id": 123456,
         "medId": "123456",
         "quantity": 100,
         "deliveryDate": "2024-12-27",
@@ -146,7 +146,7 @@ TBD
         "updatedAt": "2024-12-26T10:00:00"
     },
     {
-        "id": "654321",
+        "id": 654321,
         "medId": "654321",
         "quantity": 50,
         "deliveryDate": "2024-12-30",
@@ -170,7 +170,7 @@ TBD
 **Response:**
 ```json
 {
-    "id": "123456",
+    "id": 123456,
     "medId": "123456",
     "quantity": 100,
     "deliveryDate": "2024-12-27",
@@ -198,7 +198,7 @@ TBD
 **Response:**
 ```json
 {
-    "id": "123456",
+    "id": 123456,
     "medId": "123456",
     "quantity": 150,
     "deliveryDate": "2024-12-30",
