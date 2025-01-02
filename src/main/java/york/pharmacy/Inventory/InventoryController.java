@@ -55,6 +55,16 @@ public class InventoryController {
         return ResponseEntity.ok(response);
     }
 
+    // Endpoint for pharmacists to manually add an amount of pills,
+    // and for "prescriptions" and "orders" tables to auto-adjust
+    @PutMapping("/{id}/adjust-stock/{pillAdjustment}")
+    public ResponseEntity<InventoryResponse> adjustStockQuantity(
+            @PathVariable Long id,
+            @PathVariable Integer pillAdjustment) {
+        InventoryResponse response = inventoryService.adjustStockQuantity(id, pillAdjustment);
+        return ResponseEntity.ok(response);
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable @Min(1) Long id) {
         inventoryService.deleteInventory(id);
