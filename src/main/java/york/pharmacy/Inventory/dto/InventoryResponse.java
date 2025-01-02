@@ -1,5 +1,5 @@
 
-package york.pharmacy.Inventory.dto;
+package york.pharmacy.inventory.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

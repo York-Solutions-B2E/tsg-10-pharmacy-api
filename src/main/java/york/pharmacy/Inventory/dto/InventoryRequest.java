@@ -1,4 +1,4 @@
-package york.pharmacy.Inventory.dto;
+package york.pharmacy.inventory.dto;
 
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;

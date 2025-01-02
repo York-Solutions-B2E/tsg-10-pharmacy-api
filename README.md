@@ -42,9 +42,11 @@ Alternatively just use your IDE to run the tests with coverage.
 ```
 TBD
 ```
-# Endpoint Reference
+# Endpoint References
 [Back to Table of Contents](#table-of-contents)
 
+## Inventory Reference
+[Inventory Reference](./ApiReference/InventoryReference.md)
 
 
 # Entity Relationship Diagram
