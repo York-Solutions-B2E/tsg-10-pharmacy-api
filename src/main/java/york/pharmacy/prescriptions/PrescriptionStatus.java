@@ -5,6 +5,7 @@ public enum PrescriptionStatus {
     FILLED,
     OUT_OF_STOCK,
     AWAITING_SHIPMENT,
+    STOCK_RECEIVED,
     PICKED_UP,
     CANCELLED
 }

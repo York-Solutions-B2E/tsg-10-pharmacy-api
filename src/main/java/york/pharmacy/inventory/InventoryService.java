@@ -5,7 +5,9 @@ import york.pharmacy.exceptions.ResourceNotFoundException;
 import york.pharmacy.inventory.dto.InventoryRequest;
 import york.pharmacy.inventory.dto.InventoryResponse;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -61,5 +63,8 @@ public class InventoryService {
             throw new ResourceNotFoundException("Inventory not found with id: " + id);
         }
         inventoryRepository.deleteById(id);
+    }
+
+    public void updateSufficientStock(HashMap<Long, Integer> medicineCount) {
     }
 }

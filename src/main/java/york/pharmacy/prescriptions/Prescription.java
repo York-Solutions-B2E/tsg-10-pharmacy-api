@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import york.pharmacy.medicines.Medicine;
 
 @Entity
 @Data
@@ -18,8 +19,12 @@ public class Prescription {
     @NotNull
     private Long patientId;
 
-    @NotNull
-    private Long medicineId;
+//    @NotNull
+//    private Long medicineId;
+
+    @ManyToOne
+    @JoinColumn(name = "medicine_id")
+    private Medicine medicine;
 
     @NotNull
     private Long prescriptionNumber;
@@ -27,7 +32,7 @@ public class Prescription {
     @NotNull
     private int quantity;
 
-    private String description;
+    private String instructions;
 
     @NotNull
     @Enumerated(EnumType.STRING)

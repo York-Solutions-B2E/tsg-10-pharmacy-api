@@ -3,6 +3,7 @@ package york.pharmacy.prescriptions.dto;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import york.pharmacy.medicines.Medicine;
 import york.pharmacy.prescriptions.PrescriptionStatus;
 
 @Data
@@ -10,10 +11,11 @@ import york.pharmacy.prescriptions.PrescriptionStatus;
 @AllArgsConstructor
 public class PrescriptionResponse {
 
+    private Long id;
     private Long patientId;
-    private Long medicineId;
+    private Medicine medicine;
     private Long prescriptionNumber;
     private int quantity;
-    private String description;
+    private String instructions;
     private PrescriptionStatus status;
 }
