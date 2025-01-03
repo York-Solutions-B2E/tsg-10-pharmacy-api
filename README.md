@@ -48,6 +48,8 @@ TBD
 ## Inventory Reference
 [Inventory Reference](./ApiReference/InventoryReference.md)
 
+[Exception Reference](./ApiReference/ExceptionReference.md)
+
 
 # Entity Relationship Diagram
 [Back to Table of Contents](#table-of-contents)
