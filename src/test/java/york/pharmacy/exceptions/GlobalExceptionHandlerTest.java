@@ -2,6 +2,7 @@ package york.pharmacy.exceptions;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindException;
@@ -67,6 +68,22 @@ class GlobalExceptionHandlerTest {
         // Assert
         assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
         assertEquals("Task not found", ((java.util.Map<?, ?>) response.getBody()).get("message"));
+    }
+
+    /** Test: handleDataIntegrityViolation (DataIntegrityViolationException) */
+    @Test
+    void testHandleDataIntegrityViolation() {
+        // Arrange
+        DataIntegrityViolationException ex = mock(DataIntegrityViolationException.class);
+        when(ex.getRootCause()).thenReturn(new Throwable("Duplicate entry '1' for key 'PRIMARY'"));
+
+        // Act
+        ResponseEntity<Object> response = globalExceptionHandler.handleDataIntegrityViolation(ex);
+
+        // Assert
+        assertEquals(HttpStatus.CONFLICT, response.getStatusCode());
+        assertEquals("Database constraint violation", ((java.util.Map<?, ?>) response.getBody()).get("message"));
+        assertEquals("Duplicate entry '1' for key 'PRIMARY'", ((java.util.Map<?, ?>) response.getBody()).get("details"));
     }
 
     /** Test: handleRuntimeException */
