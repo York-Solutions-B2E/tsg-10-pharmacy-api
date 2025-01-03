@@ -1,57 +1,63 @@
 package york.pharmacy.orders;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import york.pharmacy.medicines.Medicine;
 import york.pharmacy.orders.dto.OrderRequest;
 import york.pharmacy.orders.dto.OrderResponse;
 
+import java.time.Instant;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class OrderMapperTest {
 
+    private Medicine medicine;
+    private Order order;
+    private OrderRequest orderRequest;
+
+    @BeforeEach
+    void setUp() {
+        medicine = new Medicine(1L, "Jelly Beans", "J-01", Instant.now(), Instant.now());
+        orderRequest = new OrderRequest(1L, 100, LocalDate.of(2024, 12, 27));
+        order = new Order(
+                1L,
+                medicine,
+                100,
+                LocalDate.of(2025, 2, 1),
+                OrderStatus.ORDERED,
+                Instant.now(),
+                Instant.now()
+        );
+    }
+
     @Test
     void testToEntity() {
-        // Arrange
-        OrderRequest orderRequest = new OrderRequest("123456", 100, LocalDate.of(2024, 12, 27));
-
         // Act
-        Orders order = OrderMapper.toEntity(orderRequest);
+        Order mappedOrder = OrderMapper.toEntity(orderRequest, medicine);
 
         // Assert
-        assertNotNull(order);
-        assertEquals("123456", order.getMedicineId());
-        assertEquals(100, order.getQuantity());
-        assertEquals(LocalDate.of(2024, 12, 27), order.getDeliveryDate());
-        assertEquals(OrderStatus.ORDERED, order.getStatus());
+        assertNotNull(mappedOrder);
+        assertEquals(medicine, mappedOrder.getMedicine());
+        assertEquals(100, mappedOrder.getQuantity());
+        assertEquals(LocalDate.of(2024, 12, 27), mappedOrder.getDeliveryDate());
+        assertEquals(OrderStatus.ORDERED, mappedOrder.getStatus());
     }
 
     @Test
     void testToResponse() {
-        // Arrange
-        Orders order = new Orders(
-                1L,
-                "123456",
-                100,
-                LocalDate.of(2025, 2, 1),
-                OrderStatus.ORDERED,
-                LocalDateTime.of(2024, 12, 26, 10, 0),
-                LocalDateTime.of(2024, 12, 26, 10, 0)
-        );
-
         // Act
         OrderResponse response = OrderMapper.toResponse(order);
 
         // Assert
         assertNotNull(response);
         assertEquals(1L, response.getId());
-        assertEquals("123456", response.getMedId());
+        assertEquals(medicine, response.getMedicine());
         assertEquals(100, response.getQuantity());
         assertEquals(LocalDate.of(2025, 2, 1), response.getDeliveryDate());
         assertEquals(OrderStatus.ORDERED, response.getStatus());
-        assertEquals(LocalDateTime.of(2024, 12, 26, 10, 0), response.getCreatedAt());
-        assertEquals(LocalDateTime.of(2024, 12, 26, 10, 0), response.getUpdatedAt());
+        assertEquals(order.getCreatedAt(), response.getCreatedAt());
+        assertEquals(order.getUpdatedAt(), response.getUpdatedAt());
     }
-
 }
