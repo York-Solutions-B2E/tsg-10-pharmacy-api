@@ -50,8 +50,7 @@ public class InventoryService {
     public InventoryResponse updateInventory(Long id, InventoryRequest request) {
         Inventory existingEntity = inventoryRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Inventory not found with id: " + id));
-
-        // Remove the line that sets medicineId - it should remain unchanged
+        
         existingEntity.setStockQuantity(request.getStockQuantity());
         existingEntity.setSufficientStock(request.getSufficientStock());
 
