@@ -28,14 +28,14 @@ public class PrescriptionController {
     // get all prescriptions
     @GetMapping
     public ResponseEntity<List<PrescriptionResponse>> getAllPrescriptions() {
-        List<PrescriptionResponse> prescriptionResponses = prescriptionService.getActivePrescriptions();
+        List<PrescriptionResponse> prescriptionResponses = prescriptionService.getAllPrescriptions();
         return new ResponseEntity<>(prescriptionResponses, HttpStatus.OK);
     }
 
     // get all active prescriptions
     @GetMapping("/active")
     public ResponseEntity<List<PrescriptionResponse>> getAllActivePrescriptions() {
-        List<PrescriptionResponse> prescriptionResponses = prescriptionService.getAllPrescriptions();
+        List<PrescriptionResponse> prescriptionResponses = prescriptionService.getActivePrescriptions();
         return new ResponseEntity<>(prescriptionResponses, HttpStatus.OK);
     }
 
