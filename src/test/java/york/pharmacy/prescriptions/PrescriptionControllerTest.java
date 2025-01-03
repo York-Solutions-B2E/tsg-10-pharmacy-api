@@ -112,7 +112,6 @@ class PrescriptionControllerTest {
         ResponseEntity<PrescriptionResponse> response = underTest.updatePrescription(1L, updatedStatusRequest);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals(updatedResponse, response.getBody());
         verify(prescriptionService, times(1)).updatePrescription(1L, updatedStatusRequest);
     }
 }

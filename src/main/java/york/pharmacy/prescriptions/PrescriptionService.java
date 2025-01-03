@@ -2,10 +2,12 @@ package york.pharmacy.prescriptions;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.GetMapping;
 import york.pharmacy.exceptions.ResourceNotFoundException;
 import york.pharmacy.inventory.InventoryService;
 import york.pharmacy.medicines.Medicine;
 import york.pharmacy.medicines.MedicineService;
+import york.pharmacy.orders.Order;
 import york.pharmacy.prescriptions.dto.PrescriptionRequest;
 import york.pharmacy.prescriptions.dto.PrescriptionResponse;
 import york.pharmacy.prescriptions.dto.PrescriptionStatusRequest;
@@ -41,6 +43,15 @@ public class PrescriptionService {
                 .collect(Collectors.toList());
     }
 
+    // get all active prescriptions
+    public List<PrescriptionResponse> getActivePrescriptions() {
+        return prescriptionRepository.findAllByStatus(
+                List.of(PrescriptionStatus.CANCELLED, PrescriptionStatus.PICKED_UP))
+                .stream()
+                .map(PrescriptionMapper::toResponse)
+                .collect(Collectors.toList());
+    }
+
     // get prescription by ID
     public PrescriptionResponse getPrescriptionById(Long id) {
         Prescription prescription = prescriptionRepository.findById(id)
@@ -49,23 +60,23 @@ public class PrescriptionService {
     }
 
     // update a prescription
+    // this needs to be modified.....
     public PrescriptionResponse updatePrescription(Long id, PrescriptionStatusRequest prescriptionStatusRequest) {
         Prescription prescription = prescriptionRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Prescription with id" + id + " not found") );
         PrescriptionStatus status = prescriptionStatusRequest.getStatus();
         if (status == PrescriptionStatus.FILLED) {
             // notify Inventory to update stock
-            /**
-             * Long medicineId = prescription.getMedicine().getId();
-             * inventoryService.decreaseStock(medicineId, prescription.getQuantity())
-             * */
-            // kafka publich FILLED event
+             Long medicineId = prescription.getMedicine().getId();
+             int negativeCount = -prescription.getQuantity();
+             inventoryService.adjustStockQuantity(medicineId, negativeCount);
+             prescription.setStatus(status);
 
-        } else if (status == PrescriptionStatus.AWAITING_SHIPMENT) {
-            // kafka publish BACK_ORDERED
-            // include the date
+            // kafka publish FILLED event
+
         } else if (status == PrescriptionStatus.PICKED_UP) {
             // kafka publish PICKED_UP
+            prescription.setStatus(status);
         }
 
         prescription.setStatus(prescriptionStatusRequest.getStatus());
@@ -73,6 +84,17 @@ public class PrescriptionService {
         return PrescriptionMapper.toResponse(updatedPrescription);
     }
 
+    public List<Prescription> updateAwaitingShipmentStatus(Order order) {
+        List<PrescriptionStatus> statuses = List.of(PrescriptionStatus.NEW, PrescriptionStatus.OUT_OF_STOCK);
+        List<Prescription> prescriptions = prescriptionRepository.findAllByMedicineIdAndStatus(order.getMedicine().getId(), statuses);
+        for (Prescription p : prescriptions) {
+            p.setOrder(order);
+            p.setStatus(PrescriptionStatus.AWAITING_SHIPMENT);
+            //publish to kafka BACK_ORDERED, p.getPrescriptionNumber(), order.getDate()
+        }
+
+        return prescriptions;
+    }
 
     // cancel prescription
 

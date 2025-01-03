@@ -7,13 +7,12 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import york.pharmacy.inventory.InventoryRepository;
 import york.pharmacy.inventory.InventoryService;
 import york.pharmacy.medicines.Medicine;
-import york.pharmacy.medicines.MedicineRepository;
 import york.pharmacy.medicines.MedicineService;
 import york.pharmacy.prescriptions.dto.PrescriptionRequest;
 import york.pharmacy.prescriptions.dto.PrescriptionResponse;
+import york.pharmacy.prescriptions.dto.PrescriptionStatusRequest;
 
 import java.time.Instant;
 import java.util.List;
@@ -62,7 +61,8 @@ class PrescriptionServiceTest {
                 111L,
                 30,
                 "take after meals",
-                PrescriptionStatus.NEW
+                PrescriptionStatus.NEW,
+                null
         );
     }
 
@@ -90,7 +90,6 @@ class PrescriptionServiceTest {
     }
 
     @Test
-    @Disabled
     void getPrescriptionById() {
         when(prescriptionRepository.findById(1L)).thenReturn(Optional.of(prescription));
 
@@ -102,13 +101,22 @@ class PrescriptionServiceTest {
     }
 
     @Test
-    @Disabled
     void updatePrescription() {
+        PrescriptionStatusRequest statusRequest = new PrescriptionStatusRequest(PrescriptionStatus.FILLED);
+
+        when(prescriptionRepository.findById(1L)).thenReturn(Optional.of(prescription));
+        when(prescriptionRepository.save(any(Prescription.class))).thenReturn(prescription);
+
+        PrescriptionResponse response = underTest.updatePrescription(1L, statusRequest);
+
+        assertNotNull(response);
+        assertEquals(PrescriptionStatus.FILLED, prescription.getStatus());
     }
 
     @Test
     @Disabled
     void cancelPrescription() {
+
     }
 
     @Test

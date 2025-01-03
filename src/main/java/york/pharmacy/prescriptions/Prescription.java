@@ -6,6 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import york.pharmacy.medicines.Medicine;
+import york.pharmacy.orders.Order;
 
 @Entity
 @Data
@@ -17,19 +18,20 @@ public class Prescription {
     private Long id;
 
     @NotNull
+    @Column(updatable = false)
     private Long patientId;
 
-//    @NotNull
-//    private Long medicineId;
 
     @ManyToOne
     @JoinColumn(name = "medicine_id")
     private Medicine medicine;
 
     @NotNull
+    @Column(updatable = false)
     private Long prescriptionNumber;
 
     @NotNull
+    @Column(updatable = false)
     private int quantity;
 
     private String instructions;
@@ -37,4 +39,8 @@ public class Prescription {
     @NotNull
     @Enumerated(EnumType.STRING)
     private PrescriptionStatus status;
+
+    @ManyToOne
+    @JoinColumn(name = "order_id", nullable = true)
+    private Order order;
 }
