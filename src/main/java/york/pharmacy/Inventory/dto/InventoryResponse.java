@@ -1,4 +1,3 @@
-
 package york.pharmacy.inventory.dto;
 
 import lombok.AllArgsConstructor;
@@ -14,4 +13,5 @@ public class InventoryResponse {
     private Long id;
     private Long medicineId;
     private Integer stockQuantity;
+    private Boolean sufficientStock;
 }

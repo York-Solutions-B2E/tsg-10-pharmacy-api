@@ -1,4 +1,3 @@
-
 package york.pharmacy.inventory;
 
 import york.pharmacy.inventory.dto.InventoryRequest;
@@ -9,6 +8,7 @@ public class InventoryMapper {
         return Inventory.builder()
                 .medicineId(request.getMedicineId())
                 .stockQuantity(request.getStockQuantity())
+                .sufficientStock(request.getSufficientStock())
                 .build();
     }
 
@@ -17,6 +17,7 @@ public class InventoryMapper {
                 .id(entity.getId())
                 .medicineId(entity.getMedicineId())
                 .stockQuantity(entity.getStockQuantity())
+                .sufficientStock(entity.getSufficientStock())
                 .build();
     }
 }

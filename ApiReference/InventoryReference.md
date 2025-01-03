@@ -1,145 +1,201 @@
-
-# Inventory API
+Inventory API
+=============
 
 ### Create One Inventory
-**POST** - `/api/inventory/`  
+
+**POST** - `/api/inventory/`\
 **Status Code** `201 Created`
 
 **Request:**
+
 ```json
 {
     "medicineId": 1,
-    "stockQuantity": 100
+    "stockQuantity": 100,
+    "sufficientStock": true
 }
 ```
-medicineId: Long (required, reference to Medicine table)  
-stockQuantity: Integer (required, must be >= 0)
+
+medicineId: Long (required, reference to Medicine table)\
+stockQuantity: Integer (required, must be >= 0)\
+sufficientStock: Boolean (optional)
 
 **Response:**
+
 ```json
 {
     "id": 1,
     "medicineId": 1,
-    "stockQuantity": 100
+    "stockQuantity": 100,
+    "sufficientStock": true
 }
 ```
 
-id: Long (database-generated ID)  
-medicineId: Long  
-stockQuantity: Integer
+id: Long (database-generated ID)\
+medicineId: Long\
+stockQuantity: Integer\
+sufficientStock: Boolean
 
 ### Create Many Inventories
-**POST** - `/api/inventory/bulk`  
+
+**POST** - `/api/inventory/bulk`\
 **Status Code** `201 Created`
 
 **Request:**
+
 ```json
 [{
     "medicineId": 1,
-    "stockQuantity": 50
+    "stockQuantity": 50,
+    "sufficientStock": true
 },
 {
     "medicineId": 2,
-    "stockQuantity": 75
+    "stockQuantity": 75,
+    "sufficientStock": false
 }]
 ```
+
 Accepts an array of InventoryRequest objects.
 
 **Response:**
+
 ```json
 [{
     "id": 1,
     "medicineId": 1,
-    "stockQuantity": 50
+    "stockQuantity": 50,
+    "sufficientStock": true
 },
 {
     "id": 2,
     "medicineId": 2,
-    "stockQuantity": 75
+    "stockQuantity": 75,
+    "sufficientStock": false
 }]
 ```
 
 Returns an array of created InventoryResponse objects, each with their newly assigned id.
 
 ### Read All Inventories
-**GET** - `/api/inventory/`  
+
+**GET** - `/api/inventory/`\
 **Status Code:** `200 OK`
 
-**Request:**  
+**Request:**\
 No payload required.
 
 **Response:**
+
 ```json
 [{
     "id": 1,
     "medicineId": 1,
-    "stockQuantity": 100
+    "stockQuantity": 100,
+    "sufficientStock": true
 },
 {
     "id": 2,
     "medicineId": 2,
-    "stockQuantity": 75
+    "stockQuantity": 75,
+    "sufficientStock": false
 }]
 ```
 
 Array of all Inventory records, empty array [] if none exist.
 
 ### Read One Inventory by ID
-**GET** - `/api/inventory/{id}`  
+
+**GET** - `/api/inventory/{id}`\
 **Status Code:** `200 OK` or `404 Not Found`
 
-**Request:**  
+**Request:**\
 No payload required.
 
 **Path Variable:** `{id}` (Long, required)
 
 **Response:**
+
 ```json
 {
     "id": 1,
     "medicineId": 1,
-    "stockQuantity": 100
+    "stockQuantity": 100,
+    "sufficientStock": true
 }
 ```
 
 If ID not found, returns 404 with error message.
 
 ### Update One Inventory by ID
-**PUT** - `/api/inventory/{id}`  
+
+**PUT** - `/api/inventory/{id}`\
 **Status Code:** `200 OK` or `404 Not Found`
 
 **Request:**
+
 ```json
 {
-    "medicineId": 2,
-    "stockQuantity": 50
+    "stockQuantity": 50,
+    "sufficientStock": true
 }
 ```
 
-**Path Variable:** `{id}` (Long, required)  
+**Path Variable:** `{id}` (Long, required)\
 Body: InventoryRequest with updated fields.
 
 **Response:**
+
 ```json
 {
     "id": 1,
     "medicineId": 2,
-    "stockQuantity": 50
+    "stockQuantity": 50,
+    "sufficientStock": true
 }
 ```
 
 If ID not found, returns 404 with error message.
 
+### Adjust Stock Quantity
+
+**PUT** - `/api/inventory/{id}/adjust-stock/{pillAdjustment}`\
+**Status Code:** `200 OK` or `404 Not Found`
+
+**Request:**\
+No payload required.
+
+**Path Variables:**
+
+-   `{id}` (Long, required): ID of the inventory to adjust
+-   `{pillAdjustment}` (Integer, required): Number of pills to add or subtract from stock
+    -   Positive number: Adds pills to stock (e.g., +100 adds 100 pills)
+    -   Negative number: Removes pills from stock (e.g., -30 removes 30 pills)
+
+**Response:**
+
+```json
+{
+    "id": 1,
+    "medicineId": 1,
+    "stockQuantity": 170,
+    "sufficientStock": true
+}
+```
+
+If ID not found, returns 404 with error message.\
+If adjustment would result in negative stock, returns 400 with error message.
+
+
 ### Delete One Inventory by ID
-**DELETE** - `/api/inventory/{id}`  
+
+**DELETE** - `/api/inventory/{id}`\
 **Status Code:** `204 No Content` or `404 Not Found`
 
-**Request:**  
+**Request:**\
 No payload required.
 
 **Path Variable:** `{id}` (Long, required)
 
-**Response:**  
+**Response:**\
 No payload on success. If ID not found, returns 404 with error message.
-
-

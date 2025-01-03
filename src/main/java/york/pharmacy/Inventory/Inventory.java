@@ -20,4 +20,7 @@ public class Inventory {
 
     @Column(name = "stock_quantity", nullable = false)
     private Integer stockQuantity;
+
+    @Column(name = "sufficient_stock")
+    private Boolean sufficientStock;
 }
