@@ -32,6 +32,13 @@ public class PrescriptionController {
         return new ResponseEntity<>(prescriptionResponses, HttpStatus.OK);
     }
 
+    // get all active prescriptions
+    @GetMapping("/active")
+    public ResponseEntity<List<PrescriptionResponse>> getAllActivePrescriptions() {
+        List<PrescriptionResponse> prescriptionResponses = prescriptionService.getActivePrescriptions();
+        return new ResponseEntity<>(prescriptionResponses, HttpStatus.OK);
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<PrescriptionResponse> getPrescriptionById(@PathVariable Long id) {
         PrescriptionResponse prescriptionResponse = prescriptionService.getPrescriptionById(id);

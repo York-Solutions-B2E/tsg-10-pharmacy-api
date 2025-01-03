@@ -18,7 +18,7 @@ public class PrescriptionRequest {
     private Long patientId;
 
     @NotNull
-    private Long medicineId;
+    private String medicineCode;
 
     @NotNull
     private Long prescriptionNumber;
@@ -27,7 +27,7 @@ public class PrescriptionRequest {
     private int quantity;
 
     @NotNull
-    private String description;
+    private String instructions;
 
 //    @Nullable
 //    @Enumerated(EnumType.STRING)

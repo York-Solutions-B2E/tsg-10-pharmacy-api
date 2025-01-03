@@ -7,6 +7,7 @@ import york.pharmacy.medicines.dto.MedicineResponse;
 import york.pharmacy.exceptions.ResourceNotFoundException;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -65,6 +66,12 @@ public class MedicineService {
             throw new ResourceNotFoundException("Medicine with ID " + id + " not found");
         }
         medicineRepository.deleteById(id);
+    }
+
+    public Medicine getMedicineByCode(String code) {
+        Optional<Medicine> medicineOptional = Optional.ofNullable(medicineRepository.findMedicineByCode(code));
+        return medicineOptional.
+                orElseThrow(() -> new ResourceNotFoundException("Medicine with Code " + code + " not found"));
     }
 
     // Helper Method - fetch a Medicine entity by ID

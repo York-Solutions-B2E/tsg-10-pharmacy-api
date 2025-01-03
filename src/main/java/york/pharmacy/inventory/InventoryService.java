@@ -52,7 +52,7 @@ public class InventoryService {
     public InventoryResponse updateInventory(Long id, InventoryRequest request) {
         Inventory existingEntity = inventoryRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Inventory not found with id: " + id));
-        
+
         existingEntity.setStockQuantity(request.getStockQuantity());
         existingEntity.setSufficientStock(request.getSufficientStock());
 
