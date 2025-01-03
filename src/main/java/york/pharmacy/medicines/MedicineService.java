@@ -66,4 +66,10 @@ public class MedicineService {
         }
         medicineRepository.deleteById(id);
     }
+
+    // Helper Method - fetch a Medicine entity by ID
+    public Medicine fetchMedicineById(Long id) {
+        return medicineRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Medicine with ID " + id + " not found"));
+    }
 }
