@@ -8,6 +8,7 @@ import org.mockito.BDDMockito;
 import org.mockito.ArgumentMatchers;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,7 +48,6 @@ class InventoryControllerTest {
 
     @BeforeEach
     void setUp() {
-        // Initialize basic test data
         testId = 1L;
         testMedicineId = 1L;
         testStockQuantity = 100;
@@ -55,24 +55,27 @@ class InventoryControllerTest {
         testRequest = InventoryRequest.builder()
                 .medicineId(testMedicineId)
                 .stockQuantity(testStockQuantity)
+                .sufficientStock(false)  // Add this
                 .build();
 
         testResponse = InventoryResponse.builder()
                 .id(testId)
                 .medicineId(testMedicineId)
                 .stockQuantity(testStockQuantity)
+                .sufficientStock(false)  // Add this
                 .build();
 
-        // Initialize secondary test data for bulk operations
         testRequest2 = InventoryRequest.builder()
                 .medicineId(2L)
                 .stockQuantity(75)
+                .sufficientStock(false)  // Add this
                 .build();
 
         testResponse2 = InventoryResponse.builder()
                 .id(2L)
                 .medicineId(2L)
                 .stockQuantity(75)
+                .sufficientStock(false)  // Add this
                 .build();
     }
 
@@ -82,9 +85,16 @@ class InventoryControllerTest {
         BDDMockito.given(inventoryService.createInventory(ArgumentMatchers.any(InventoryRequest.class)))
                 .willReturn(testResponse);
 
+        InventoryRequest request = InventoryRequest.builder()
+                .medicineId(testMedicineId)
+                .stockQuantity(testStockQuantity)
+                .sufficientStock(false)
+                .build();
+
         mockMvc.perform(post("/api/inventory")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(testRequest)))
+                        .content(objectMapper.writeValueAsString(request)))
+                .andDo(print())  // This will print the full request/response details
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id", is(1)))
                 .andExpect(jsonPath("$.medicineId", is(1)))
@@ -97,9 +107,22 @@ class InventoryControllerTest {
         BDDMockito.given(inventoryService.createManyInventories(ArgumentMatchers.anyList()))
                 .willReturn(Arrays.asList(testResponse, testResponse2));
 
+        // Add sufficientStock to both requests
+        InventoryRequest request1 = InventoryRequest.builder()
+                .medicineId(testMedicineId)
+                .stockQuantity(testStockQuantity)
+                .sufficientStock(false)
+                .build();
+
+        InventoryRequest request2 = InventoryRequest.builder()
+                .medicineId(2L)
+                .stockQuantity(75)
+                .sufficientStock(false)
+                .build();
+
         mockMvc.perform(post("/api/inventory/bulk")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(Arrays.asList(testRequest, testRequest2))))
+                        .content(objectMapper.writeValueAsString(Arrays.asList(request1, request2))))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.length()", is(2)))
                 .andExpect(jsonPath("$[0].id", is(1)))
@@ -141,10 +164,12 @@ class InventoryControllerTest {
         // "setUp()" function, in beforeEach, sets original values
 
         // This represents what we expect the service to return after the update
+        // Note that medicineId should stay the same as the original value (1L) since it's read-only
         InventoryResponse updatedResponse = InventoryResponse.builder()
                 .id(testId)             // ID stays the same from setUp()
-                .medicineId(2L)         // Changed from 1L, as compared to setUp()
+                .medicineId(testMedicineId)  // Should remain 1L from setUp() since medicineId is read-only
                 .stockQuantity(99)      // Changed from 100, as compared to setUp()
+                .sufficientStock(true)  // Adding sufficientStock field
                 .build();
 
         // This sets up our mock service layer - when the MOCK service layer's "updateInventory" method
@@ -159,9 +184,11 @@ class InventoryControllerTest {
                 .willReturn(updatedResponse);
 
         // This represents the HTTP request body that a client would send to our API
+        // Even though the client attempts to change medicineId to 2L, it should be ignored
         InventoryRequest updateRequest = InventoryRequest.builder()
-                .medicineId(2L)         // Changed from 1L
+                .medicineId(2L)         // This attempt to change medicineId should be ignored
                 .stockQuantity(99)      // Changed from 100
+                .sufficientStock(true)  // Adding sufficientStock field
                 .build();
 
         // This simulates the HTTP request and verifies the response;
@@ -176,8 +203,33 @@ class InventoryControllerTest {
                         .content(objectMapper.writeValueAsString(updateRequest)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id", is(1)))          // ID unchanged
-                .andExpect(jsonPath("$.medicineId", is(2)))  // Changed from 1
-                .andExpect(jsonPath("$.stockQuantity", is(99))); // Changed from 100
+                .andExpect(jsonPath("$.medicineId", is(1)))  // Should remain 1 (original value) since medicineId is read-only
+                .andExpect(jsonPath("$.stockQuantity", is(99))) // Changed from 100
+                .andExpect(jsonPath("$.sufficientStock", is(true))); // Added assertion for sufficientStock
+    }
+
+    @Test
+    @DisplayName("Adjust stock quantity -> PUT /api/inventory/{id}/adjust-stock/{pillAdjustment}")
+    void testAdjustStockQuantity() throws Exception {
+        // Set up expected response after adjustment
+        InventoryResponse adjustedResponse = InventoryResponse.builder()
+                .id(testId)
+                .medicineId(testMedicineId)
+                .stockQuantity(testStockQuantity + 50)  // Increased by 50
+                .build();
+
+        // Mock the service method
+        BDDMockito.given(inventoryService.adjustStockQuantity(
+                        ArgumentMatchers.eq(testId),
+                        ArgumentMatchers.eq(50)))
+                .willReturn(adjustedResponse);
+
+        // Perform the request and verify
+        mockMvc.perform(put("/api/inventory/{id}/adjust-stock/{pillAdjustment}", testId, 50))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id", is(1)))
+                .andExpect(jsonPath("$.medicineId", is(1)))
+                .andExpect(jsonPath("$.stockQuantity", is(150)));  // Original 100 + 50
     }
 
     @Test

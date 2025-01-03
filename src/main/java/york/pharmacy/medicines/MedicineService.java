@@ -73,4 +73,10 @@ public class MedicineService {
         return medicineOptional.
                 orElseThrow(() -> new ResourceNotFoundException("Medicine with Code " + code + " not found"));
     }
+
+    // Helper Method - fetch a Medicine entity by ID
+    public Medicine fetchMedicineById(Long id) {
+        return medicineRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Medicine with ID " + id + " not found"));
+    }
 }

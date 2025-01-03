@@ -25,7 +25,7 @@ public class Medicine {
     @NotNull
     private String name;
 
-    @NotNull
+    @Column(nullable = false, unique = true)
     private String code;
 
     @CreatedDate

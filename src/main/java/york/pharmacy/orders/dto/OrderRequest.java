@@ -6,6 +6,8 @@ import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.RequiredArgsConstructor;
+import york.pharmacy.orders.OrderStatus;
 
 import java.time.LocalDate;
 
@@ -15,7 +17,7 @@ import java.time.LocalDate;
 public class OrderRequest {
 
     @NotNull(message = "Medicine ID cannot be null")
-    private String medId;
+    private Long medicineId;
 
     @NotNull
     @Min(value = 1, message = "Quantity must be at least 1")
@@ -24,4 +26,12 @@ public class OrderRequest {
     @NotNull(message = "Delivery date cannot be null")
     @Future(message = "Delivery date must be in the future")
     private LocalDate deliveryDate;
+
+    private OrderStatus status;
+
+    public OrderRequest(Long medId, int quantity, LocalDate date) {
+        this.medicineId = medId;
+        this.quantity = quantity;
+        this.deliveryDate = date;
+    }
 }
