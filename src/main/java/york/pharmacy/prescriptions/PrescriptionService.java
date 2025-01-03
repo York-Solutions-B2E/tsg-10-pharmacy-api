@@ -1,8 +1,8 @@
 package york.pharmacy.prescriptions;
 
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.GetMapping;
 import york.pharmacy.exceptions.ResourceNotFoundException;
 import york.pharmacy.inventory.InventoryService;
 import york.pharmacy.medicines.Medicine;
@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
+@Transactional
 @RequiredArgsConstructor
 public class PrescriptionService {
 
@@ -79,7 +80,6 @@ public class PrescriptionService {
             prescription.setStatus(status);
         }
 
-        prescription.setStatus(prescriptionStatusRequest.getStatus());
         Prescription updatedPrescription = prescriptionRepository.save(prescription);
         return PrescriptionMapper.toResponse(updatedPrescription);
     }
@@ -91,6 +91,7 @@ public class PrescriptionService {
             p.setOrder(order);
             p.setStatus(PrescriptionStatus.AWAITING_SHIPMENT);
             //publish to kafka BACK_ORDERED, p.getPrescriptionNumber(), order.getDate()
+            Prescription savedPrescription = prescriptionRepository.save(p);
         }
 
         return prescriptions;
@@ -100,11 +101,11 @@ public class PrescriptionService {
 
     //    call updatePrescription with cancelled
     public void cancelPrescription(Long id) {
-//        Prescription prescription = prescriptionRepository.findById(id)
-//                .orElseThrow(() -> new ResourceNotFoundException("Prescription with id" + id + " not found") );
+        Prescription prescription = prescriptionRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Prescription with id" + id + " not found") );
 
-        PrescriptionStatusRequest statusRequest = new PrescriptionStatusRequest(PrescriptionStatus.CANCELLED);
-        updatePrescription(id, statusRequest);
+        prescription.setStatus(PrescriptionStatus.CANCELLED);
+        prescriptionRepository.save(prescription);
     }
 
     // send med id, total count of active prescriptions for that medicine
