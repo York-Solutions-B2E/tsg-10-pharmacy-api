@@ -1,5 +1,6 @@
 package york.pharmacy.inventory;
 
+import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 import york.pharmacy.exceptions.ResourceNotFoundException;
 import york.pharmacy.inventory.dto.InventoryRequest;
@@ -10,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+@Transactional
 @Service
 public class InventoryService {
     private final InventoryRepository inventoryRepository;
