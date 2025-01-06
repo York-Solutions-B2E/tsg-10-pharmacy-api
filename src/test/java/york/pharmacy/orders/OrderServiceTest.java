@@ -6,10 +6,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import york.pharmacy.inventory.Inventory;
+import york.pharmacy.inventory.InventoryService;
 import york.pharmacy.medicines.Medicine;
-import york.pharmacy.medicines.MedicineRepository;
 import york.pharmacy.medicines.MedicineService;
-import york.pharmacy.orders.dto.OrderDeliveryDateResponse;
 import york.pharmacy.orders.dto.OrderRequest;
 import york.pharmacy.orders.dto.OrderResponse;
 import york.pharmacy.exceptions.ResourceNotFoundException;
@@ -17,7 +17,7 @@ import york.pharmacy.exceptions.ResourceNotFoundException;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+
 import java.util.List;
 import java.util.Optional;
 
@@ -33,10 +33,14 @@ class OrderServiceTest {
     @Mock
     private MedicineService medicineService;
 
+    @Mock
+    private InventoryService inventoryService;
+
     @InjectMocks
     private OrderService orderService;
 
     private Medicine medicine;
+    private Inventory inventory;
     private Order order;
     private OrderRequest orderRequest;
 
@@ -44,10 +48,12 @@ class OrderServiceTest {
     void setUp() {
 
         medicine = new Medicine(1L, "Jelly Beans", "J-01", Instant.now(), Instant.now());
+        inventory = new Inventory(1L, medicine, 500, true);
 
         order = new Order(
                 1L,
                 medicine,
+                inventory,
                 100,
                 LocalDate.of(2024, 12, 27),
                 OrderStatus.ORDERED,
@@ -56,6 +62,7 @@ class OrderServiceTest {
         );
 
         orderRequest = new OrderRequest(
+                1L,
                 1L,
                 100,
                 LocalDate.of(2024, 12, 27)
@@ -73,7 +80,7 @@ class OrderServiceTest {
 
         // Assert
         assertNotNull(result);
-        assertEquals(1L, result.getMedicine().getId());
+        assertEquals(1L, result.getInventory().getId());
         assertEquals(100, result.getQuantity());
         verify(orderRepository, times(1)).save(any(Order.class));
     }
@@ -93,7 +100,7 @@ class OrderServiceTest {
         // Assert
         assertNotNull(result);
         assertEquals(1, result.size());
-        assertEquals(1L, result.get(0).getMedicine().getId());
+        assertEquals(1L, result.get(0).getInventory().getId());
         verify(orderRepository, times(1)).saveAll(anyList());
     }
 
@@ -109,7 +116,7 @@ class OrderServiceTest {
         // Assert
         assertNotNull(result);
         assertEquals(1, result.size());
-        assertEquals(1L, result.get(0).getMedicine().getId());
+        assertEquals(1L, result.get(0).getInventory().getId());
         verify(orderRepository, times(1)).findAll();
     }
 
@@ -124,7 +131,7 @@ class OrderServiceTest {
 
         // Assert
         assertNotNull(result);
-        assertEquals(1L, result.getMedicine().getId());
+        assertEquals(1L, result.getInventory().getId());
         verify(orderRepository, times(1)).findById(1L);
     }
 
@@ -134,6 +141,7 @@ class OrderServiceTest {
         // Arrange
         OrderRequest updatedRequest = new OrderRequest(
                 1L,
+                1L,
                 200,
                 LocalDate.of(2024, 12, 28),
                 OrderStatus.ORDERED
@@ -142,6 +150,7 @@ class OrderServiceTest {
         Order updatedOrder = new Order(
                 1L,
                 medicine,
+                inventory,
                 200,
                 LocalDate.of(2024, 12, 28),
                 OrderStatus.ORDERED,
@@ -157,7 +166,7 @@ class OrderServiceTest {
 
         // Assert
         assertNotNull(result);
-        assertEquals(1L, result.getMedicine().getId());
+        assertEquals(1L, result.getInventory().getId());
         assertEquals(200, result.getQuantity());
         verify(orderRepository, times(1)).findById(1L);
         verify(orderRepository, times(1)).save(any(Order.class));
@@ -170,6 +179,7 @@ class OrderServiceTest {
         Order updatedOrder = new Order(
                 1L,
                 medicine,
+                inventory,
                 order.getQuantity(),
                 order.getDeliveryDate(),
                 OrderStatus.RECEIVED, // Updated status
@@ -219,47 +229,53 @@ class OrderServiceTest {
         verify(orderRepository, never()).deleteById(anyLong());
     }
 
-    /** Test: getDeliveryDatesByMedicineId - Success */
     @Test
-    void testGetDeliveryDatesByMedicineId_Success() {
+    void testGetClosestOrderedDeliveryDateForMedicine_Success() {
         // Arrange
-        List<Order> orders = List.of(
-                new Order(
-                        1L,
-                        medicine,
-                        100,
-                        LocalDate.of(2024, 12, 27),
-                        OrderStatus.ORDERED,
-                        Instant.now(),
-                        Instant.now()
-                ),
-                new Order(
-                        2L,
-                        medicine,
-                        50,
-                        LocalDate.of(2024, 12, 28),
-                        OrderStatus.ORDERED,
-                        Instant.now(),
-                        Instant.now()
-                )
+        Long medicineId = 1L;
+        LocalDate currentDate = LocalDate.now();
+
+        Order expectedOrder = new Order(
+                1L,
+                medicine,
+                inventory,
+                100,
+                LocalDate.of(2024, 12, 27),
+                OrderStatus.ORDERED,
+                Instant.now(),
+                Instant.now()
         );
 
-        when(orderRepository.findByMedicineIdAndStatus(1L, OrderStatus.ORDERED)).thenReturn(Optional.of(orders));
+        when(orderRepository.findFirstByMedicineIdAndStatusOrderedAndFutureDeliveryDate(currentDate, medicineId))
+                .thenReturn(Optional.of(expectedOrder));
 
         // Act
-        List<OrderDeliveryDateResponse> responses = orderService.getDeliveryDatesByMedicineId(1L);
+        Optional<Order> result = orderService.getClosestOrderedDeliveryDateForMedicine(medicineId);
 
         // Assert
-        assertNotNull(responses);
-        assertEquals(2, responses.size());
-
-        assertEquals(1L, responses.get(0).getOrderId());
-        assertEquals(LocalDate.of(2024, 12, 27), responses.get(0).getDeliveryDate());
-
-        assertEquals(2L, responses.get(1).getOrderId());
-        assertEquals(LocalDate.of(2024, 12, 28), responses.get(1).getDeliveryDate());
-
-        verify(orderRepository, times(1)).findByMedicineIdAndStatus(1L, OrderStatus.ORDERED);
+        assertTrue(result.isPresent());
+        assertEquals(expectedOrder, result.get());
+        verify(orderRepository, times(1))
+                .findFirstByMedicineIdAndStatusOrderedAndFutureDeliveryDate(currentDate, medicineId);
     }
+
+    @Test
+    void testGetClosestOrderedDeliveryDateForMedicine_NotFound() {
+        // Arrange
+        Long medicineId = 1L;
+        LocalDate currentDate = LocalDate.now();
+
+        when(orderRepository.findFirstByMedicineIdAndStatusOrderedAndFutureDeliveryDate(currentDate, medicineId))
+                .thenReturn(Optional.empty());
+
+        // Act
+        Optional<Order> result = orderService.getClosestOrderedDeliveryDateForMedicine(medicineId);
+
+        // Assert
+        assertFalse(result.isPresent());
+        verify(orderRepository, times(1))
+                .findFirstByMedicineIdAndStatusOrderedAndFutureDeliveryDate(currentDate, medicineId);
+    }
+
 
 }

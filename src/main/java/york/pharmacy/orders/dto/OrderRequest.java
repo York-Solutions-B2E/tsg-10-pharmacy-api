@@ -19,6 +19,9 @@ public class OrderRequest {
     @NotNull(message = "Medicine ID cannot be null")
     private Long medicineId;
 
+    @NotNull(message = "Inventory ID cannot be null")
+    private Long inventoryId;
+
     @NotNull
     @Min(value = 1, message = "Quantity must be at least 1")
     private int quantity;
@@ -29,8 +32,9 @@ public class OrderRequest {
 
     private OrderStatus status;
 
-    public OrderRequest(Long medId, int quantity, LocalDate date) {
+    public OrderRequest(Long medId, Long inventoryId, int quantity, LocalDate date) {
         this.medicineId = medId;
+        this.inventoryId = inventoryId;
         this.quantity = quantity;
         this.deliveryDate = date;
     }

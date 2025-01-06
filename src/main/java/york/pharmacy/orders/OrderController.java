@@ -5,7 +5,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
-import york.pharmacy.orders.dto.OrderDeliveryDateResponse;
 import york.pharmacy.orders.dto.OrderRequest;
 import york.pharmacy.orders.dto.OrderResponse;
 
@@ -44,12 +43,6 @@ public class OrderController {
     public ResponseEntity<OrderResponse> getOrderById(@PathVariable Long id) {
         OrderResponse orderResponse = orderService.getOrderById(id);
         return new ResponseEntity<>(orderResponse, HttpStatus.OK);
-    }
-
-    @GetMapping("/delivery-dates/{medicineId}")
-    public ResponseEntity<List<OrderDeliveryDateResponse>> getDeliveryDatesByMedicineId(@PathVariable Long medicineId) {
-        List<OrderDeliveryDateResponse> deliveryDates = orderService.getDeliveryDatesByMedicineId(medicineId);
-        return new ResponseEntity<>(deliveryDates, HttpStatus.OK);
     }
 
     // Update an existing order by its ID
