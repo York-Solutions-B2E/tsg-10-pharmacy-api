@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import york.pharmacy.exceptions.ResourceNotFoundException;
 import york.pharmacy.inventory.dto.InventoryRequest;
 import york.pharmacy.inventory.dto.InventoryResponse;
+import york.pharmacy.inventory.dto.InventoryUpdateRequest;
 import york.pharmacy.medicines.Medicine;
 import york.pharmacy.medicines.MedicineService;
 import york.pharmacy.orders.Order;
@@ -68,6 +69,16 @@ public class InventoryService {
     }
 
     public InventoryResponse updateInventory(Long id, InventoryRequest request) {
+        Inventory existingEntity = inventoryRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Inventory not found with id: " + id));
+
+        existingEntity.setStockQuantity(request.getStockQuantity());
+
+        Inventory updatedEntity = inventoryRepository.save(existingEntity);
+        return InventoryMapper.toResponse(updatedEntity);
+    }
+
+    public InventoryResponse updateInventoryStock(Long id, InventoryUpdateRequest request) {
         Inventory existingEntity = inventoryRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Inventory not found with id: " + id));
 
