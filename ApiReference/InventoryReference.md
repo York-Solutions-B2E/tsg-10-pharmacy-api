@@ -10,9 +10,8 @@ Inventory API
 
 ```json
 {
-    "medicineId": 1,
-    "stockQuantity": 100,
-    "sufficientStock": true
+  "medicineId": 1,
+  "stockQuantity": 100
 }
 ```
 
@@ -24,10 +23,17 @@ sufficientStock: Boolean (optional)
 
 ```json
 {
+  "id": 1,
+  "medicine": {
     "id": 1,
-    "medicineId": 1,
-    "stockQuantity": 100,
-    "sufficientStock": true
+    "name": "ChocoRelief",
+    "code": "CRX-001",
+    "createdAt": "2025-01-06T21:09:42.689349Z",
+    "updatedAt": "2025-01-06T21:09:42.689349Z"
+  },
+  "stockQuantity": 100,
+  "sufficientStock": true,
+  "deliveryDate": null
 }
 ```
 
@@ -46,13 +52,11 @@ sufficientStock: Boolean
 ```json
 [{
     "medicineId": 1,
-    "stockQuantity": 50,
-    "sufficientStock": true
+    "stockQuantity": 50
 },
 {
     "medicineId": 2,
-    "stockQuantity": 75,
-    "sufficientStock": false
+    "stockQuantity": 75
 }]
 ```
 
@@ -61,18 +65,34 @@ Accepts an array of InventoryRequest objects.
 **Response:**
 
 ```json
-[{
+[
+  {
     "id": 1,
-    "medicineId": 1,
+    "medicine": {
+      "id": 1,
+      "name": "ChocoRelief",
+      "code": "CRX-001",
+      "createdAt": "2025-01-06T21:09:42.689349Z",
+      "updatedAt": "2025-01-06T21:09:42.689349Z"
+    },
     "stockQuantity": 50,
-    "sufficientStock": true
-},
-{
+    "sufficientStock": true,
+    "deliveryDate": null
+  },
+  {
     "id": 2,
-    "medicineId": 2,
+    "medicine": {
+      "id": 2,
+      "name": "MintyCure",
+      "code": "MCX-002",
+      "createdAt": "2025-01-06T21:09:42.762950Z",
+      "updatedAt": "2025-01-06T21:09:42.762950Z"
+    },
     "stockQuantity": 75,
-    "sufficientStock": false
-}]
+    "sufficientStock": true,
+    "deliveryDate": null
+  }
+]
 ```
 
 Returns an array of created InventoryResponse objects, each with their newly assigned id.
@@ -88,18 +108,34 @@ No payload required.
 **Response:**
 
 ```json
-[{
+[
+  {
     "id": 1,
-    "medicineId": 1,
+    "medicine": {
+      "id": 1,
+      "name": "ChocoRelief",
+      "code": "CRX-001",
+      "createdAt": "2025-01-06T21:09:42.689349Z",
+      "updatedAt": "2025-01-06T21:09:42.689349Z"
+    },
     "stockQuantity": 100,
-    "sufficientStock": true
-},
-{
+    "sufficientStock": true,
+    "deliveryDate": "2025-01-09"
+  },
+  {
     "id": 2,
-    "medicineId": 2,
-    "stockQuantity": 75,
-    "sufficientStock": false
-}]
+    "medicine": {
+      "id": 2,
+      "name": "MintyCure",
+      "code": "MCX-002",
+      "createdAt": "2025-01-06T21:09:42.762950Z",
+      "updatedAt": "2025-01-06T21:09:42.762950Z"
+    },
+    "stockQuantity": 200,
+    "sufficientStock": true,
+    "deliveryDate": "2025-01-16"
+  }
+]
 ```
 
 Array of all Inventory records, empty array [] if none exist.
@@ -118,10 +154,17 @@ No payload required.
 
 ```json
 {
+  "id": 1,
+  "medicine": {
     "id": 1,
-    "medicineId": 1,
-    "stockQuantity": 100,
-    "sufficientStock": true
+    "name": "ChocoRelief",
+    "code": "CRX-001",
+    "createdAt": "2025-01-06T21:09:42.689349Z",
+    "updatedAt": "2025-01-06T21:09:42.689349Z"
+  },
+  "stockQuantity": 100,
+  "sufficientStock": true,
+  "deliveryDate": "2025-01-09"
 }
 ```
 
@@ -136,8 +179,7 @@ If ID not found, returns 404 with error message.
 
 ```json
 {
-    "stockQuantity": 50,
-    "sufficientStock": true
+  "stockQuantity": 123
 }
 ```
 
@@ -148,10 +190,17 @@ Body: InventoryRequest with updated fields.
 
 ```json
 {
+  "id": 1,
+  "medicine": {
     "id": 1,
-    "medicineId": 2,
-    "stockQuantity": 50,
-    "sufficientStock": true
+    "name": "ChocoRelief",
+    "code": "CRX-001",
+    "createdAt": "2025-01-06T21:09:42.689349Z",
+    "updatedAt": "2025-01-06T21:09:42.689349Z"
+  },
+  "stockQuantity": 123,
+  "sufficientStock": true,
+  "deliveryDate": null
 }
 ```
 
@@ -176,10 +225,17 @@ No payload required.
 
 ```json
 {
+  "id": 1,
+  "medicine": {
     "id": 1,
-    "medicineId": 1,
-    "stockQuantity": 170,
-    "sufficientStock": true
+    "name": "ChocoRelief",
+    "code": "CRX-001",
+    "createdAt": "2025-01-06T21:09:42.689349Z",
+    "updatedAt": "2025-01-06T21:09:42.689349Z"
+  },
+  "stockQuantity": 173,
+  "sufficientStock": true,
+  "deliveryDate": null
 }
 ```
 
