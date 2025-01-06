@@ -72,7 +72,6 @@ public class InventoryService {
                 .orElseThrow(() -> new ResourceNotFoundException("Inventory not found with id: " + id));
 
         existingEntity.setStockQuantity(request.getStockQuantity());
-        existingEntity.setSufficientStock(request.getSufficientStock());
 
         Inventory updatedEntity = inventoryRepository.save(existingEntity);
         return InventoryMapper.toResponse(updatedEntity);
