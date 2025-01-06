@@ -84,6 +84,18 @@ class PrescriptionControllerTest {
     }
 
     @Test
+    void getActivePrescriptions() {
+        when(prescriptionService.getActivePrescriptions()).thenReturn(List.of(prescriptionResponse));
+
+        ResponseEntity<List<PrescriptionResponse>> response = underTest.getAllActivePrescriptions();
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(List.of(prescriptionResponse), response.getBody());
+        verify(prescriptionService, times(1)).getActivePrescriptions();
+
+    }
+
+    @Test
     void getPrescriptionById() {
         when(prescriptionService.getPrescriptionById(1L)).thenReturn(prescriptionResponse);
 

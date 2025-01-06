@@ -20,7 +20,7 @@ public interface PrescriptionRepository extends JpaRepository<Prescription, Long
     int findTotalQuantityByMedicineIdAndStatus(Long medicineId);
 
     @Query("SELECT p FROM Prescription p WHERE p.status NOT IN (:excludedStatuses)")
-    List<Prescription> findAllByStatus(@Param("excludedStatuses") List<PrescriptionStatus> excludedStatuses);
+    List<Prescription> findAllByStatusExcept(@Param("excludedStatuses") List<PrescriptionStatus> excludedStatuses);
 
     @Query("SELECT p FROM Prescription p WHERE p.medicine.id = :medicineID AND p.status IN (:statuses)")
     List<Prescription> findAllByMedicineIdAndStatus(Long medicineId, List<PrescriptionStatus> statuses);

@@ -46,7 +46,7 @@ public class PrescriptionService {
 
     // get all active prescriptions
     public List<PrescriptionResponse> getActivePrescriptions() {
-        return prescriptionRepository.findAllByStatus(
+        return prescriptionRepository.findAllByStatusExcept(
                 List.of(PrescriptionStatus.CANCELLED, PrescriptionStatus.PICKED_UP))
                 .stream()
                 .map(PrescriptionMapper::toResponse)
@@ -67,17 +67,27 @@ public class PrescriptionService {
                 .orElseThrow(() -> new ResourceNotFoundException("Prescription with id" + id + " not found") );
         PrescriptionStatus status = prescriptionStatusRequest.getStatus();
         if (status == PrescriptionStatus.FILLED) {
-            // notify Inventory to update stock
-             Long medicineId = prescription.getMedicine().getId();
-             int negativeCount = -prescription.getQuantity();
-             inventoryService.adjustStockQuantity(medicineId, negativeCount);
-             prescription.setStatus(status);
+            if (prescription.getStatus() == PrescriptionStatus.NEW || prescription.getStatus() == PrescriptionStatus.STOCK_RECEIVED) {
+                // notify Inventory to update stock
+                Long medicineId = prescription.getMedicine().getId();
+                int negativeCount = -prescription.getQuantity();
+                inventoryService.adjustStockQuantity(medicineId, negativeCount);
+                prescription.setStatus(status);
 
-            // kafka publish FILLED event
+                // kafka publish FILLED event
+            } else {
+                throw new IllegalStateException("Prescription cannot be marked as FILLED from the current state: " + prescription.getStatus());
+            }
+
 
         } else if (status == PrescriptionStatus.PICKED_UP) {
-            // kafka publish PICKED_UP
-            prescription.setStatus(status);
+            if (prescription.getStatus() == PrescriptionStatus.FILLED) {
+                // kafka publish PICKED_UP
+                prescription.setStatus(status);
+            } else {
+                throw new IllegalStateException("Prescription cannot be marked as PICKED_UP from the current state: " + prescription.getStatus());
+            }
+
         }
 
         Prescription updatedPrescription = prescriptionRepository.save(prescription);
@@ -98,8 +108,6 @@ public class PrescriptionService {
     }
 
     // cancel prescription
-
-    //    call updatePrescription with cancelled
     public void cancelPrescription(Long id) {
         Prescription prescription = prescriptionRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Prescription with id" + id + " not found") );
