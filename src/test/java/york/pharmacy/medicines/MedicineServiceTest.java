@@ -131,4 +131,35 @@ class MedicineServiceTest {
         assertThrows(ResourceNotFoundException.class, () -> medicineService.deleteMedicine(1L));
         verify(medicineRepository, times(1)).existsById(1L);
     }
+
+    @Test
+    void testGetMedicineByCode_Success() {
+        // Arrange
+        when(medicineRepository.findMedicineByCode("MED001")).thenReturn(medicine);
+
+        // Act
+        Medicine result = medicineService.getMedicineByCode("MED001");
+
+        // Assert
+        assertNotNull(result);
+        assertEquals("Aspirin", result.getName());
+        assertEquals("MED001", result.getCode());
+        verify(medicineRepository, times(1)).findMedicineByCode("MED001");
+    }
+
+    @Test
+    void testFetchMedicineById_Success() {
+        // Arrange
+        when(medicineRepository.findById(1L)).thenReturn(Optional.of(medicine));
+
+        // Act
+        Medicine result = medicineService.fetchMedicineById(1L);
+
+        // Assert
+        assertNotNull(result);
+        assertEquals("Aspirin", result.getName());
+        assertEquals("MED001", result.getCode());
+        verify(medicineRepository, times(1)).findById(1L);
+    }
+
 }

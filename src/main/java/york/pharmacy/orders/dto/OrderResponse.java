@@ -3,6 +3,7 @@ package york.pharmacy.orders.dto;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import york.pharmacy.inventory.Inventory;
 import york.pharmacy.medicines.Medicine;
 import york.pharmacy.orders.OrderStatus;
 
@@ -16,7 +17,7 @@ import java.time.LocalDateTime;
 public class OrderResponse {
 
     private long id;
-    private Medicine medicine;
+    private Inventory inventory;
     private int quantity;
     private LocalDate deliveryDate;
     private OrderStatus status;

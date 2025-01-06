@@ -1,13 +1,25 @@
 package york.pharmacy.inventory;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import york.pharmacy.inventory.dto.InventoryRequest;
 import york.pharmacy.inventory.dto.InventoryResponse;
+import york.pharmacy.medicines.Medicine;
+
+import java.time.Instant;
+
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class InventoryMapperTest {
+    private Medicine medicine;
+
+    @BeforeEach
+    void setUp() {
+        medicine = new Medicine(2L, "Jelly Beans", "J-01", Instant.now(), Instant.now());
+    }
+
 
     @Test
     @DisplayName("Should map InventoryRequest to Inventory entity correctly")
@@ -18,11 +30,11 @@ class InventoryMapperTest {
                 .sufficientStock(true)
                 .build();
 
-        Inventory entity = InventoryMapper.toEntity(request);
+        Inventory entity = InventoryMapper.toEntity(request,medicine);
 
         assertNotNull(entity);
         assertNull(entity.getId());
-        assertEquals(1L, entity.getMedicineId());
+        assertEquals(2L, entity.getMedicine().getId());
         assertEquals(100, entity.getStockQuantity());
         assertTrue(entity.getSufficientStock());
     }
@@ -35,11 +47,11 @@ class InventoryMapperTest {
                 .stockQuantity(100)
                 .build();
 
-        Inventory entity = InventoryMapper.toEntity(request);
+        Inventory entity = InventoryMapper.toEntity(request, medicine);
 
         assertNotNull(entity);
         assertNull(entity.getId());
-        assertEquals(1L, entity.getMedicineId());
+        assertEquals(2L, entity.getMedicine().getId());
         assertEquals(100, entity.getStockQuantity());
         assertNull(entity.getSufficientStock()); // Default value should be null
     }
@@ -49,7 +61,7 @@ class InventoryMapperTest {
     void testToResponse() {
         Inventory entity = Inventory.builder()
                 .id(1L)
-                .medicineId(2L)
+                .medicine(medicine)
                 .stockQuantity(50)
                 .sufficientStock(true)
                 .build();
@@ -58,7 +70,7 @@ class InventoryMapperTest {
 
         assertNotNull(response);
         assertEquals(1L, response.getId());
-        assertEquals(2L, response.getMedicineId());
+        assertEquals(2L, response.getMedicine().getId());
         assertEquals(50, response.getStockQuantity());
         assertTrue(response.getSufficientStock());
     }
@@ -68,7 +80,7 @@ class InventoryMapperTest {
     void testToResponseWithDefaultSufficientStock() {
         Inventory entity = Inventory.builder()
                 .id(1L)
-                .medicineId(2L)
+                .medicine(medicine)
                 .stockQuantity(50)
                 .build();
 
@@ -76,7 +88,7 @@ class InventoryMapperTest {
 
         assertNotNull(response);
         assertEquals(1L, response.getId());
-        assertEquals(2L, response.getMedicineId());
+        assertEquals(2L, response.getMedicine().getId());
         assertEquals(50, response.getStockQuantity());
         assertNull(response.getSufficientStock()); // Default value should be null
     }

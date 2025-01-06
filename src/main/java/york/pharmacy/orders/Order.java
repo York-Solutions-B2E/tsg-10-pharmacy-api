@@ -5,15 +5,14 @@ import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.RequiredArgsConstructor;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import york.pharmacy.inventory.Inventory;
 import york.pharmacy.medicines.Medicine;
 
 import java.time.Instant;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 
 @Entity
 @Data
@@ -29,6 +28,10 @@ public class Order {
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "medicine_id", nullable = false)
     private Medicine medicine;
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "inventory_id", nullable = false)
+    private Inventory inventory;
 
     @NotNull
     private int quantity;

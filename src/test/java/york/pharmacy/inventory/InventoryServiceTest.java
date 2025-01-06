@@ -9,7 +9,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import york.pharmacy.medicines.Medicine;
+import york.pharmacy.medicines.MedicineService;
+import york.pharmacy.orders.OrderService;
 
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -24,12 +28,19 @@ class InventoryServiceTest {
     @Mock
     private InventoryRepository inventoryRepository;
 
+    @Mock
+    private MedicineService medicineService;
+
+    @Mock
+    private OrderService orderService;
+
     @InjectMocks
     private InventoryService inventoryService;
 
     // Common test data
     private Long testId;
     private Long testMedicineId;
+    private Medicine medicine;
     private int testStockQuantity;
     private Inventory testInventory;
     private InventoryRequest testRequest;
@@ -39,12 +50,13 @@ class InventoryServiceTest {
     void setUp() {
         // Initialize test data
         testId = 1L;
-        testMedicineId = 1L;
+        testMedicineId = 2L;
+        medicine = new Medicine(2L, "Jelly Beans", "J-01", Instant.now(), Instant.now());
         testStockQuantity = 10;
 
         testInventory = Inventory.builder()
                 .id(testId)
-                .medicineId(testMedicineId)
+                .medicine(medicine)
                 .stockQuantity(testStockQuantity)
                 .build();
 
@@ -55,7 +67,7 @@ class InventoryServiceTest {
 
         expectedResponse = InventoryResponse.builder()
                 .id(testId)
-                .medicineId(testMedicineId)
+                .medicine(medicine)
                 .stockQuantity(testStockQuantity)
                 .build();
     }
@@ -73,7 +85,7 @@ class InventoryServiceTest {
         // Then
         assertNotNull(result);
         assertEquals(testId, result.getId());
-        assertEquals(testMedicineId, result.getMedicineId());
+        assertEquals(testMedicineId, result.getMedicine().getId());
         assertEquals(testStockQuantity, result.getStockQuantity());
         verify(inventoryRepository, times(1)).save(any(Inventory.class));
     }
@@ -90,7 +102,7 @@ class InventoryServiceTest {
 
         Inventory secondInventory = Inventory.builder()
                 .id(2L)
-                .medicineId(2L)
+                .medicine(medicine)
                 .stockQuantity(20)
                 .build();
         List<Inventory> savedEntities = Arrays.asList(testInventory, secondInventory);
@@ -103,8 +115,8 @@ class InventoryServiceTest {
         // Then
         assertNotNull(results);
         assertEquals(2, results.size());
-        assertEquals(testMedicineId, results.get(0).getMedicineId());
-        assertEquals(2L, results.get(1).getMedicineId());
+        assertEquals(testMedicineId, results.get(0).getMedicine().getId());
+        assertEquals(2L, results.get(1).getMedicine().getId());
         verify(inventoryRepository, times(1)).saveAll(any());
     }
 
@@ -120,7 +132,7 @@ class InventoryServiceTest {
 
         // Then
         assertNotNull(result);
-        assertEquals(testMedicineId, result.getMedicineId());
+        assertEquals(testMedicineId, result.getMedicine().getId());
         verify(inventoryRepository, times(1)).findById(testId);
     }
 
@@ -130,7 +142,7 @@ class InventoryServiceTest {
         // Given
         Inventory secondInventory = Inventory.builder()
                 .id(2L)
-                .medicineId(2L)
+                .medicine(medicine)
                 .stockQuantity(20)
                 .build();
 
@@ -143,8 +155,8 @@ class InventoryServiceTest {
         // Then
         assertNotNull(results);
         assertEquals(2, results.size());
-        assertEquals(testMedicineId, results.get(0).getMedicineId());
-        assertEquals(2L, results.get(1).getMedicineId());
+        assertEquals(testMedicineId, results.get(0).getMedicine().getId());
+        assertEquals(2L, results.get(1).getMedicine().getId());
         verify(inventoryRepository, times(1)).findAll();
     }
 
@@ -160,7 +172,7 @@ class InventoryServiceTest {
 
         Inventory updatedInventory = Inventory.builder()
                 .id(testId)
-                .medicineId(testMedicineId)  // Should keep original medicineId
+                .medicine(medicine)  // Should keep original medicineId
                 .stockQuantity(20)
                 .sufficientStock(true)
                 .build();
@@ -175,7 +187,7 @@ class InventoryServiceTest {
 
         // Then
         assertNotNull(result);
-        assertEquals(testMedicineId, result.getMedicineId());  // Should keep original medicineId
+        assertEquals(testMedicineId, result.getMedicine().getId());  // Should keep original medicineId
         assertEquals(20, result.getStockQuantity());
         assertTrue(result.getSufficientStock());
         verify(inventoryRepository).findById(testId);
@@ -198,7 +210,7 @@ class InventoryServiceTest {
         // The inventory that should be saved - note medicineId stays the same
         Inventory expectedSavedInventory = Inventory.builder()
                 .id(testId)
-                .medicineId(originalMedicineId)     // Should keep original medicineId
+                .medicine(medicine)     // Should keep original medicineId
                 .stockQuantity(50)                  // These other fields
                 .sufficientStock(true)              // should update
                 .build();
@@ -213,7 +225,7 @@ class InventoryServiceTest {
 
         // Then
         assertNotNull(result);
-        assertEquals(originalMedicineId, result.getMedicineId(),
+        assertEquals(originalMedicineId, result.getMedicine().getId(),
                 "MedicineId should remain unchanged despite update attempt");
         assertEquals(50, result.getStockQuantity(),
                 "Stock quantity should be updated");
@@ -222,7 +234,7 @@ class InventoryServiceTest {
 
         verify(inventoryRepository).findById(testId);
         verify(inventoryRepository).save(argThat(savedInventory ->
-                savedInventory.getMedicineId().equals(originalMedicineId) &&
+                savedInventory.getMedicine().getId().equals(originalMedicineId) &&
                         savedInventory.getStockQuantity() == 50 &&
                         savedInventory.getSufficientStock()
         ));
@@ -267,7 +279,7 @@ class InventoryServiceTest {
 
         Inventory inventoryWithSufficientStock = Inventory.builder()
                 .id(testId)
-                .medicineId(testMedicineId)
+                .medicine(medicine)
                 .stockQuantity(testStockQuantity)
                 .sufficientStock(true)
                 .build();
@@ -294,7 +306,7 @@ class InventoryServiceTest {
         int adjustment = 5;
         Inventory adjustedInventory = Inventory.builder()
                 .id(testId)
-                .medicineId(testMedicineId)
+                .medicine(medicine)
                 .stockQuantity(testStockQuantity + adjustment)
                 .build();
 
