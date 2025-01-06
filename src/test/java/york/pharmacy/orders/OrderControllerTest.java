@@ -3,12 +3,13 @@ package york.pharmacy.orders;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import york.pharmacy.inventory.Inventory;
 import york.pharmacy.medicines.Medicine;
-import york.pharmacy.orders.dto.OrderDeliveryDateResponse;
 import york.pharmacy.orders.dto.OrderRequest;
 import york.pharmacy.orders.dto.OrderResponse;
 
@@ -27,19 +28,20 @@ class OrderControllerTest {
     @Mock
     private OrderService orderService;
 
+    @InjectMocks
     private OrderController orderController;
 
     private Medicine medicine;
+    private Inventory inventory;
     private OrderRequest orderRequest;
     private OrderResponse orderResponse;
 
     @BeforeEach
     void setUp() {
-        orderController = new OrderController(orderService);
-
         medicine = new Medicine(1L, "Jelly Bean", "J-01", Instant.now(), Instant.now());
-
+        inventory = new Inventory(1L, medicine, 100, true);
         orderRequest = new OrderRequest(
+                1L,
                 1L,
                 100,
                 LocalDate.of(2024, 12, 27)
@@ -47,7 +49,7 @@ class OrderControllerTest {
 
         orderResponse = new OrderResponse(
                 1L,
-                medicine,
+                inventory,
                 100,
                 LocalDate.of(2024, 12, 27),
                 OrderStatus.ORDERED,
@@ -67,9 +69,9 @@ class OrderControllerTest {
 
         // Assert
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
-        assertEquals(1L, response.getBody().getMedicine().getId());
-        assertEquals("Jelly Bean", response.getBody().getMedicine().getName());
-        assertEquals("J-01", response.getBody().getMedicine().getCode());
+        assertEquals(1L, response.getBody().getInventory().getId());
+        assertEquals("Jelly Bean", response.getBody().getInventory().getMedicine().getName());
+        assertEquals("J-01", response.getBody().getInventory().getMedicine().getCode());
         verify(orderService, times(1)).createOrder(any(OrderRequest.class));
     }
 
@@ -87,9 +89,9 @@ class OrderControllerTest {
         // Assert
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
         assertEquals(1, response.getBody().size());
-        assertEquals(1L, response.getBody().get(0).getMedicine().getId());
-        assertEquals("Jelly Bean", response.getBody().get(0).getMedicine().getName());
-        assertEquals("J-01", response.getBody().get(0).getMedicine().getCode());
+        assertEquals(1L, response.getBody().get(0).getInventory().getId());
+        assertEquals("Jelly Bean", response.getBody().get(0).getInventory().getMedicine().getName());
+        assertEquals("J-01", response.getBody().get(0).getInventory().getMedicine().getCode());
         verify(orderService, times(1)).batchCreateOrders(anyList());
     }
 
@@ -105,9 +107,9 @@ class OrderControllerTest {
         // Assert
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals(1, response.getBody().size());
-        assertEquals(1L, response.getBody().get(0).getMedicine().getId());
-        assertEquals("Jelly Bean", response.getBody().get(0).getMedicine().getName());
-        assertEquals("J-01", response.getBody().get(0).getMedicine().getCode());
+        assertEquals(1L, response.getBody().get(0).getInventory().getId());
+        assertEquals("Jelly Bean", response.getBody().get(0).getInventory().getMedicine().getName());
+        assertEquals("J-01", response.getBody().get(0).getInventory().getMedicine().getCode());
         verify(orderService, times(1)).getAllOrders();
     }
 
@@ -122,34 +124,10 @@ class OrderControllerTest {
 
         // Assert
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals(1L, response.getBody().getMedicine().getId());
-        assertEquals("Jelly Bean", response.getBody().getMedicine().getName());
-        assertEquals("J-01", response.getBody().getMedicine().getCode());
+        assertEquals(1L, response.getBody().getInventory().getId());
+        assertEquals("Jelly Bean", response.getBody().getInventory().getMedicine().getName());
+        assertEquals("J-01", response.getBody().getInventory().getMedicine().getCode());
         verify(orderService, times(1)).getOrderById(1L);
-    }
-
-    /** Test: getDeliveryDatesByMedicineId - Success */
-    @Test
-    void testGetDeliveryDatesByMedicineId_Success() {
-        // Arrange
-        List<OrderDeliveryDateResponse> deliveryDates = List.of(
-                new OrderDeliveryDateResponse(1L, LocalDate.of(2024, 12, 27)),
-                new OrderDeliveryDateResponse(2L, LocalDate.of(2024, 12, 28))
-        );
-
-        when(orderService.getDeliveryDatesByMedicineId(1L)).thenReturn(deliveryDates);
-
-        // Act
-        ResponseEntity<List<OrderDeliveryDateResponse>> response = orderController.getDeliveryDatesByMedicineId(1L);
-
-        // Assert
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals(2, response.getBody().size());
-        assertEquals(1L, response.getBody().get(0).getOrderId());
-        assertEquals(LocalDate.of(2024, 12, 27), response.getBody().get(0).getDeliveryDate());
-        assertEquals(2L, response.getBody().get(1).getOrderId());
-        assertEquals(LocalDate.of(2024, 12, 28), response.getBody().get(1).getDeliveryDate());
-        verify(orderService, times(1)).getDeliveryDatesByMedicineId(1L);
     }
 
     /** Test: updateOrder - Success */
@@ -163,9 +141,9 @@ class OrderControllerTest {
 
         // Assert
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals(1L, response.getBody().getMedicine().getId());
-        assertEquals("Jelly Bean", response.getBody().getMedicine().getName());
-        assertEquals("J-01", response.getBody().getMedicine().getCode());
+        assertEquals(1L, response.getBody().getInventory().getId());
+        assertEquals("Jelly Bean", response.getBody().getInventory().getMedicine().getName());
+        assertEquals("J-01", response.getBody().getInventory().getMedicine().getCode());
         verify(orderService, times(1)).updateOrder(eq(1L), any(OrderRequest.class));
     }
 
@@ -174,7 +152,7 @@ class OrderControllerTest {
         // Arrange
         OrderResponse updatedOrderResponse = new OrderResponse(
                 1L,
-                medicine,
+                inventory,
                 orderRequest.getQuantity(),
                 orderRequest.getDeliveryDate(),
                 OrderStatus.RECEIVED,
@@ -194,7 +172,6 @@ class OrderControllerTest {
         verify(orderService, times(1)).updateOrderStatusToReceived(1L);
 
     }
-
 
     /** Test: deleteOrder - Success */
     @Test

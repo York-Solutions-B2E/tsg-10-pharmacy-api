@@ -1,52 +1,70 @@
 package york.pharmacy.inventory;
 
 import jakarta.transaction.Transactional;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import york.pharmacy.exceptions.ResourceNotFoundException;
 import york.pharmacy.inventory.dto.InventoryRequest;
 import york.pharmacy.inventory.dto.InventoryResponse;
+import york.pharmacy.medicines.Medicine;
+import york.pharmacy.medicines.MedicineService;
+import york.pharmacy.orders.Order;
+import york.pharmacy.orders.OrderService;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Transactional
 @Service
 public class InventoryService {
     private final InventoryRepository inventoryRepository;
+    private final OrderService orderService;
+    private final MedicineService medicineService;
 
-    public InventoryService(InventoryRepository inventoryRepository) {
+    public InventoryService(InventoryRepository inventoryRepository, @Lazy OrderService orderService, MedicineService medicineService) {
         this.inventoryRepository = inventoryRepository;
+        this.orderService = orderService;
+        this.medicineService = medicineService;
     }
 
     public InventoryResponse createInventory(InventoryRequest request) {
-        Inventory entity = InventoryMapper.toEntity(request);
+        Medicine medicine = medicineService.fetchMedicineById(request.getMedicineId()); // Fetch Medicine entity
+        Inventory entity = InventoryMapper.toEntity(request, medicine);
         Inventory savedEntity = inventoryRepository.save(entity);
         return InventoryMapper.toResponse(savedEntity);
     }
 
     public List<InventoryResponse> createManyInventories(List<InventoryRequest> requests) {
-        List<Inventory> entities = requests.stream()
-                .map(InventoryMapper::toEntity)
-                .collect(Collectors.toList());
+        List<Inventory> entities = requests.stream().map(request -> {
+            Medicine medicine = medicineService.fetchMedicineById(request.getMedicineId());
+            return InventoryMapper.toEntity(request, medicine);
+        }).collect(Collectors.toList());
         List<Inventory> savedEntities = inventoryRepository.saveAll(entities);
-        return savedEntities.stream()
-                .map(InventoryMapper::toResponse)
-                .collect(Collectors.toList());
+        return savedEntities.stream().map(InventoryMapper::toResponse).collect(Collectors.toList());
     }
 
     public InventoryResponse getInventoryById(Long id) {
         Inventory entity = inventoryRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Inventory not found with id: " + id));
-        return InventoryMapper.toResponse(entity);
+
+        // Fetch the closest delivery date for the associated medicine
+        Long medicineId = entity.getMedicine().getId();
+        Optional<Order> closestOrder = orderService.getClosestOrderedDeliveryDateForMedicine(medicineId);
+
+        return InventoryMapper.toResponse(entity, closestOrder);
     }
+
 
     public List<InventoryResponse> getAllInventories() {
         List<Inventory> entities = inventoryRepository.findAll();
-        return entities.stream()
-                .map(InventoryMapper::toResponse)
-                .collect(Collectors.toList());
+        return entities.stream().map(entity -> {
+            Long medicineId = entity.getMedicine().getId();
+            Optional<Order> closestOrder = orderService.getClosestOrderedDeliveryDateForMedicine(medicineId);
+            return InventoryMapper.toResponse(entity, closestOrder);
+        }).collect(Collectors.toList());
     }
 
     public InventoryResponse updateInventory(Long id, InventoryRequest request) {
@@ -104,4 +122,11 @@ public class InventoryService {
         Inventory updatedEntity = inventoryRepository.save(existingEntity);
         return InventoryMapper.toResponse(updatedEntity);
     }
+
+    // Helper method - Used in service layer to fetch Inventory entity by ID
+    public Inventory fetchInventoryById(Long id) {
+        return inventoryRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Inventory with ID " + id + " not found"));
+    }
+
 }

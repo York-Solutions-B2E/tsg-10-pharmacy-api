@@ -3,6 +3,7 @@ package york.pharmacy.inventory;
 
 import jakarta.persistence.*;
 import lombok.*;
+import york.pharmacy.medicines.Medicine;
 
 @Data
 @Builder
@@ -15,8 +16,9 @@ public class Inventory {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "medicine_id", nullable = false)
-    private Long medicineId;
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "medicine_id", nullable = false)
+    private Medicine medicine;
 
     @Column(name = "stock_quantity", nullable = false)
     private Integer stockQuantity;

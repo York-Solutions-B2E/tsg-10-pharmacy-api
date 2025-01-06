@@ -1,5 +1,6 @@
 package york.pharmacy.orders;
 
+import york.pharmacy.inventory.Inventory;
 import york.pharmacy.medicines.Medicine;
 import york.pharmacy.orders.dto.OrderRequest;
 import york.pharmacy.orders.dto.OrderResponse;
@@ -7,9 +8,10 @@ import york.pharmacy.orders.dto.OrderResponse;
 public class OrderMapper {
 
     // Convert OrderRequest DTO to Order Entity
-    public static Order toEntity(OrderRequest orderRequest, Medicine medicine) {
+    public static Order toEntity(OrderRequest orderRequest, Medicine medicine, Inventory inventory) {
         Order order = new Order();
         order.setMedicine(medicine);
+        order.setInventory(inventory);
         order.setQuantity(orderRequest.getQuantity());
         order.setDeliveryDate(orderRequest.getDeliveryDate());
         order.setStatus(OrderStatus.ORDERED); // Default status for new orders
@@ -20,7 +22,7 @@ public class OrderMapper {
     public static OrderResponse toResponse(Order order) {
         OrderResponse response = new OrderResponse();
         response.setId(order.getId());
-        response.setMedicine(order.getMedicine());
+        response.setInventory(order.getInventory());
         response.setQuantity(order.getQuantity());
         response.setDeliveryDate(order.getDeliveryDate());
         response.setStatus(order.getStatus());
