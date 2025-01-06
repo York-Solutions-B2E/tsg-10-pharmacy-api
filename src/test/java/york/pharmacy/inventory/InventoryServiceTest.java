@@ -121,7 +121,7 @@ class InventoryServiceTest {
     }
 
     @Test
-    @DisplayName("Should get an existing Inventory by ID")
+    @DisplayName("Should get an existing Inventory by Id")
     void testGetInventoryById() {
         // Given
         when(inventoryRepository.findById(testId))
@@ -161,24 +161,34 @@ class InventoryServiceTest {
     }
 
     @Test
-    @DisplayName("Should update an existing Inventory successfully while preserving medicineId")
+    @DisplayName("Should update an existing Inventory successfully while ignoring changes to medicineId")
     void testUpdateInventory() {
         // Given
+        Long attemptedNewMedicineId = 999L;
         InventoryRequest updateRequest = InventoryRequest.builder()
-                .medicineId(2L)  // This should be ignored in update
-                .stockQuantity(20)
-                .sufficientStock(true)
+                .medicineId(attemptedNewMedicineId) // Attempt to change medicineId; should be ignored
+                .stockQuantity(20)                  // Actually update the stock quantity
                 .build();
 
+        // The inventory we find in the DB
+        Inventory originalInventory = Inventory.builder()
+                .id(testId)
+                .medicine(medicine)     // testMedicineId = 2L from setUp()
+                .stockQuantity(testStockQuantity) // e.g. 10
+                .sufficientStock(false) // remains false unless the service changes it
+                .build();
+
+        // The inventory after update: only stockQuantity changes from 10 -> 20
+        // (sufficientStock remains false because the service doesn't override it)
         Inventory updatedInventory = Inventory.builder()
                 .id(testId)
-                .medicine(medicine)  // Should keep original medicineId
+                .medicine(medicine)
                 .stockQuantity(20)
-                .sufficientStock(true)
+                .sufficientStock(false)
                 .build();
 
         when(inventoryRepository.findById(testId))
-                .thenReturn(Optional.of(testInventory));
+                .thenReturn(Optional.of(originalInventory));
         when(inventoryRepository.save(any(Inventory.class)))
                 .thenReturn(updatedInventory);
 
@@ -186,62 +196,29 @@ class InventoryServiceTest {
         InventoryResponse result = inventoryService.updateInventory(testId, updateRequest);
 
         // Then
-        assertNotNull(result);
-        assertEquals(testMedicineId, result.getMedicine().getId());  // Should keep original medicineId
-        assertEquals(20, result.getStockQuantity());
-        assertTrue(result.getSufficientStock());
-        verify(inventoryRepository).findById(testId);
-        verify(inventoryRepository).save(any(Inventory.class));
-    }
+        assertNotNull(result, "Returned InventoryResponse should not be null");
+        assertEquals(testId, result.getId(), "Inventory ID should remain the same");
+        assertEquals(testMedicineId, result.getMedicine().getId(),
+                "MedicineId should remain the original (2L) despite the update attempt");
+        assertEquals(20, result.getStockQuantity(),
+                "Stock quantity should be updated to 20");
+        // Because the service code doesn't change sufficientStock,
+        // we expect it to remain false (same as the original).
+        assertFalse(result.getSufficientStock(),
+                "Expected sufficientStock to remain false if service doesn't override it");
 
-    @Test
-    @DisplayName("Should ignore medicineId in update request and preserve original value")
-    void testUpdateInventoryPreservesMedicineId() {
-        // Given
-        Long originalMedicineId = testMedicineId;  // 1L from setUp()
-        Long attemptedNewMedicineId = 999L;        // Attempting to change to this
-
-        InventoryRequest updateRequest = InventoryRequest.builder()
-                .medicineId(attemptedNewMedicineId) // Attempting to update medicineId
-                .stockQuantity(50)                  // Only this should change
-                .sufficientStock(true)              // And this
-                .build();
-
-        // The inventory that should be saved - note medicineId stays the same
-        Inventory expectedSavedInventory = Inventory.builder()
-                .id(testId)
-                .medicine(medicine)     // Should keep original medicineId
-                .stockQuantity(50)                  // These other fields
-                .sufficientStock(true)              // should update
-                .build();
-
-        when(inventoryRepository.findById(testId))
-                .thenReturn(Optional.of(testInventory));
-        when(inventoryRepository.save(any(Inventory.class)))
-                .thenReturn(expectedSavedInventory);
-
-        // When
-        InventoryResponse result = inventoryService.updateInventory(testId, updateRequest);
-
-        // Then
-        assertNotNull(result);
-        assertEquals(originalMedicineId, result.getMedicine().getId(),
-                "MedicineId should remain unchanged despite update attempt");
-        assertEquals(50, result.getStockQuantity(),
-                "Stock quantity should be updated");
-        assertTrue(result.getSufficientStock(),
-                "Sufficient stock should be updated");
-
+        // Verify the 'save' call was made with the correct final entity
         verify(inventoryRepository).findById(testId);
         verify(inventoryRepository).save(argThat(savedInventory ->
-                savedInventory.getMedicine().getId().equals(originalMedicineId) &&
-                        savedInventory.getStockQuantity() == 50 &&
-                        savedInventory.getSufficientStock()
+                savedInventory.getId().equals(testId)
+                        && savedInventory.getMedicine().getId().equals(testMedicineId)
+                        && savedInventory.getStockQuantity() == 20
+                        && Boolean.FALSE.equals(savedInventory.getSufficientStock())
         ));
     }
 
     @Test
-    @DisplayName("Should delete an existing Inventory by ID")
+    @DisplayName("Should delete an existing Inventory by Id")
     void testDeleteInventory() {
         // Given
         when(inventoryRepository.existsById(testId)).thenReturn(true);
@@ -271,39 +248,109 @@ class InventoryServiceTest {
     }
 
     @Test
-    @DisplayName("Should update sufficient stock status correctly")
-    void testUpdateSufficientStock() {
-        // Given
-        HashMap<Long, Integer> medicineCount = new HashMap<>();
-        medicineCount.put(testMedicineId, 5);
+    @DisplayName("Should keep sufficientStock = true if current stock >= needed")
+    void testUpdateSufficientStockRemainsTrue() {
 
-        Inventory inventoryWithSufficientStock = Inventory.builder()
+        int requiredAmount = 5; // Less than the 10 in Inventory
+        HashMap<Long, Integer> medicineCount = new HashMap<>();
+        medicineCount.put(testMedicineId, requiredAmount);
+
+        // Already true by default
+        Inventory inventoryInDb = Inventory.builder()
                 .id(testId)
                 .medicine(medicine)
-                .stockQuantity(testStockQuantity)
-                .sufficientStock(true)
+                .stockQuantity(testStockQuantity) // 10
+                .sufficientStock(true)            // default
                 .build();
 
+        // Service sees stock is sufficient => stays true
         when(inventoryRepository.findByMedicineId(testMedicineId))
-                .thenReturn(Optional.of(testInventory));
+                .thenReturn(Optional.of(inventoryInDb));
         when(inventoryRepository.save(any(Inventory.class)))
-                .thenReturn(inventoryWithSufficientStock);
+                .thenAnswer(invocation -> invocation.getArgument(0, Inventory.class));
+        // or .thenReturn(inventoryInDb) if you like
 
         // When
         InventoryResponse result = inventoryService.updateSufficientStock(medicineCount);
 
         // Then
         assertNotNull(result);
-        assertTrue(result.getSufficientStock());
+        assertTrue(result.getSufficientStock(),
+                "Expected sufficientStock to remain true when stock >= needed");
+    }
+
+
+    @Test
+    @DisplayName("Should update sufficient stock status to false if current stock is less than needed")
+    void testUpdateSufficientStockBecomesFalse() {
+
+        int requiredAmount = testStockQuantity + 5; // 15 > 10, to test "sufficientStock"
+        HashMap<Long, Integer> medicineCount = new HashMap<>();
+        medicineCount.put(testMedicineId, requiredAmount);
+
+        Inventory inventoryInDb = Inventory.builder()
+                .id(testId)
+                .medicine(medicine)
+                .stockQuantity(testStockQuantity)  // 10
+                .sufficientStock(true)             // default
+                .build();
+
+        // Service "sees" stock is insufficient and sets to false
+        Inventory inventoryWithInsufficientStock = Inventory.builder()
+                .id(testId)
+                .medicine(medicine)
+                .stockQuantity(testStockQuantity)  // still 10
+                .sufficientStock(false)            // forced to false
+                .build();
+
+        when(inventoryRepository.findByMedicineId(testMedicineId))
+                .thenReturn(Optional.of(inventoryInDb));
+        when(inventoryRepository.save(any(Inventory.class)))
+                .thenReturn(inventoryWithInsufficientStock);
+
+        // When
+        InventoryResponse result = inventoryService.updateSufficientStock(medicineCount);
+
+        // Then
+        assertNotNull(result);
+        assertFalse(result.getSufficientStock(),
+                "Expected sufficientStock to be false when stock < needed");
         verify(inventoryRepository).findByMedicineId(testMedicineId);
         verify(inventoryRepository).save(any(Inventory.class));
     }
 
+
     @Test
-    @DisplayName("Should adjust stock quantity successfully")
-    void testAdjustStockQuantity() {
+    @DisplayName("Should adjust stock quantity successfully for a positive adjustment")
+    void testAdjustStockQuantityPositive() {
         // Given
         int adjustment = 5;
+        Inventory adjustedInventory = Inventory.builder()
+                .id(testId)
+                .medicine(medicine)
+                .stockQuantity(testStockQuantity + adjustment)
+                .build();
+
+        when(inventoryRepository.findById(testId))
+                .thenReturn(Optional.of(testInventory));
+        when(inventoryRepository.save(any(Inventory.class)))
+                .thenReturn(adjustedInventory);
+
+        // When
+        InventoryResponse result = inventoryService.adjustStockQuantity(testId, adjustment);
+
+        // Then
+        assertNotNull(result);
+        assertEquals(testStockQuantity + adjustment, result.getStockQuantity());
+        verify(inventoryRepository).findById(testId);
+        verify(inventoryRepository).save(any(Inventory.class));
+    }
+
+    @Test
+    @DisplayName("Should adjust stock quantity successfully for a negative adjustment")
+    void testAdjustStockQuantityNegative() {
+        // Given
+        int adjustment = -3;
         Inventory adjustedInventory = Inventory.builder()
                 .id(testId)
                 .medicine(medicine)

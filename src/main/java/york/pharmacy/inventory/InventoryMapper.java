@@ -12,7 +12,6 @@ public class InventoryMapper {
         return Inventory.builder()
                 .medicine(medicine)
                 .stockQuantity(request.getStockQuantity())
-                .sufficientStock(request.getSufficientStock())
                 .build();
     }
 

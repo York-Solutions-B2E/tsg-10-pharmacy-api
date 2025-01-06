@@ -1,6 +1,5 @@
 package york.pharmacy.inventory.dto;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -20,5 +19,4 @@ public class InventoryRequest {
     @NotNull(message = "Stock quantity is required")
     private Integer stockQuantity;
 
-    private Boolean sufficientStock;
 }
