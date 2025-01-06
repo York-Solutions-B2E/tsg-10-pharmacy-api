@@ -196,7 +196,6 @@ class PrescriptionServiceTest {
         Inventory inventory = new Inventory(1L, medicine, 500, true);
         Order order = new Order(
                 123L,
-                medicine,
                 inventory,
                 100,
                 LocalDate.of(2025, 02, 27),
