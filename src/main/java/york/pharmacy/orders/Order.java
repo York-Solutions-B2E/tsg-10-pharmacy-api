@@ -26,10 +26,6 @@ public class Order {
     private Long id;
 
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "medicine_id", nullable = false)
-    private Medicine medicine;
-
-    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "inventory_id", nullable = false)
     private Inventory inventory;
 

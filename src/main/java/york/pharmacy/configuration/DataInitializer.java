@@ -116,11 +116,11 @@ public class DataInitializer implements CommandLineRunner {
     private void seedOrders() {
         System.out.println("Seeding Orders...");
         List<OrderRequest> orderRequests = List.of(
-                new OrderRequest(1L, 1L, 100,LocalDate.now().plusDays(5)),
-                new OrderRequest(2L, 2L, 200, LocalDate.now().plusDays(10)),
-                new OrderRequest(3L, 3L, 300, LocalDate.now().plusDays(7)),
-                new OrderRequest(4L, 4L, 100, LocalDate.now().plusDays(3)),
-                new OrderRequest(5L, 5L, 200, LocalDate.now().plusDays(20))
+                new OrderRequest(1L, 100,LocalDate.now().plusDays(5)),
+                new OrderRequest( 2L, 200, LocalDate.now().plusDays(10)),
+                new OrderRequest( 3L, 300, LocalDate.now().plusDays(7)),
+                new OrderRequest( 4L, 100, LocalDate.now().plusDays(3)),
+                new OrderRequest( 5L, 200, LocalDate.now().plusDays(20))
         );
 
         orderService.batchCreateOrders(orderRequests);

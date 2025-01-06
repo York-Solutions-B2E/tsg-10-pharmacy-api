@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import york.pharmacy.exceptions.ResourceNotFoundException;
 import york.pharmacy.inventory.dto.InventoryRequest;
 import york.pharmacy.inventory.dto.InventoryResponse;
+import york.pharmacy.inventory.dto.InventoryUpdateRequest;
 import york.pharmacy.medicines.Medicine;
 import york.pharmacy.medicines.MedicineService;
 import york.pharmacy.orders.Order;
@@ -51,8 +52,7 @@ public class InventoryService {
                 .orElseThrow(() -> new ResourceNotFoundException("Inventory not found with id: " + id));
 
         // Fetch the closest delivery date for the associated medicine
-        Long medicineId = entity.getMedicine().getId();
-        Optional<Order> closestOrder = orderService.getClosestOrderedDeliveryDateForMedicine(medicineId);
+        Optional<Order> closestOrder = orderService.getClosestOrderedDeliveryDate(entity.getId());
 
         return InventoryMapper.toResponse(entity, closestOrder);
     }
@@ -61,13 +61,22 @@ public class InventoryService {
     public List<InventoryResponse> getAllInventories() {
         List<Inventory> entities = inventoryRepository.findAll();
         return entities.stream().map(entity -> {
-            Long medicineId = entity.getMedicine().getId();
-            Optional<Order> closestOrder = orderService.getClosestOrderedDeliveryDateForMedicine(medicineId);
+            Optional<Order> closestOrder = orderService.getClosestOrderedDeliveryDate(entity.getId());
             return InventoryMapper.toResponse(entity, closestOrder);
         }).collect(Collectors.toList());
     }
 
     public InventoryResponse updateInventory(Long id, InventoryRequest request) {
+        Inventory existingEntity = inventoryRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Inventory not found with id: " + id));
+
+        existingEntity.setStockQuantity(request.getStockQuantity());
+
+        Inventory updatedEntity = inventoryRepository.save(existingEntity);
+        return InventoryMapper.toResponse(updatedEntity);
+    }
+
+    public InventoryResponse updateInventoryStock(Long id, InventoryUpdateRequest request) {
         Inventory existingEntity = inventoryRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Inventory not found with id: " + id));
 

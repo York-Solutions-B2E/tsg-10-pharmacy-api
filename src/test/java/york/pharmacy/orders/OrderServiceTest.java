@@ -9,7 +9,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import york.pharmacy.inventory.Inventory;
 import york.pharmacy.inventory.InventoryService;
 import york.pharmacy.medicines.Medicine;
-import york.pharmacy.medicines.MedicineService;
 import york.pharmacy.orders.dto.OrderRequest;
 import york.pharmacy.orders.dto.OrderResponse;
 import york.pharmacy.exceptions.ResourceNotFoundException;
@@ -31,9 +30,6 @@ class OrderServiceTest {
     private OrderRepository orderRepository;
 
     @Mock
-    private MedicineService medicineService;
-
-    @Mock
     private InventoryService inventoryService;
 
     @InjectMocks
@@ -52,7 +48,6 @@ class OrderServiceTest {
 
         order = new Order(
                 1L,
-                medicine,
                 inventory,
                 100,
                 LocalDate.of(2024, 12, 27),
@@ -62,7 +57,6 @@ class OrderServiceTest {
         );
 
         orderRequest = new OrderRequest(
-                1L,
                 1L,
                 100,
                 LocalDate.of(2024, 12, 27)
@@ -141,15 +135,12 @@ class OrderServiceTest {
         // Arrange
         OrderRequest updatedRequest = new OrderRequest(
                 1L,
-                1L,
                 200,
-                LocalDate.of(2024, 12, 28),
-                OrderStatus.ORDERED
+                LocalDate.of(2024, 12, 28)
         );
 
         Order updatedOrder = new Order(
                 1L,
-                medicine,
                 inventory,
                 200,
                 LocalDate.of(2024, 12, 28),
@@ -178,7 +169,6 @@ class OrderServiceTest {
         // Arrange
         Order updatedOrder = new Order(
                 1L,
-                medicine,
                 inventory,
                 order.getQuantity(),
                 order.getDeliveryDate(),
@@ -232,12 +222,11 @@ class OrderServiceTest {
     @Test
     void testGetClosestOrderedDeliveryDateForMedicine_Success() {
         // Arrange
-        Long medicineId = 1L;
+        Long inventoryId = 1L;
         LocalDate currentDate = LocalDate.now();
 
         Order expectedOrder = new Order(
                 1L,
-                medicine,
                 inventory,
                 100,
                 LocalDate.of(2024, 12, 27),
@@ -246,35 +235,35 @@ class OrderServiceTest {
                 Instant.now()
         );
 
-        when(orderRepository.findFirstByMedicineIdAndStatusOrderedAndFutureDeliveryDate(currentDate, medicineId))
+        when(orderRepository.findFirstOrderByInventoryIdAndStatusOrderedAndFutureDeliveryDate(currentDate, inventoryId))
                 .thenReturn(Optional.of(expectedOrder));
 
         // Act
-        Optional<Order> result = orderService.getClosestOrderedDeliveryDateForMedicine(medicineId);
+        Optional<Order> result = orderService.getClosestOrderedDeliveryDate(inventoryId);
 
         // Assert
         assertTrue(result.isPresent());
         assertEquals(expectedOrder, result.get());
         verify(orderRepository, times(1))
-                .findFirstByMedicineIdAndStatusOrderedAndFutureDeliveryDate(currentDate, medicineId);
+                .findFirstOrderByInventoryIdAndStatusOrderedAndFutureDeliveryDate(currentDate, inventoryId);
     }
 
     @Test
     void testGetClosestOrderedDeliveryDateForMedicine_NotFound() {
         // Arrange
-        Long medicineId = 1L;
+        Long inventoryId = 1L;
         LocalDate currentDate = LocalDate.now();
 
-        when(orderRepository.findFirstByMedicineIdAndStatusOrderedAndFutureDeliveryDate(currentDate, medicineId))
+        when(orderRepository.findFirstOrderByInventoryIdAndStatusOrderedAndFutureDeliveryDate(currentDate, inventoryId))
                 .thenReturn(Optional.empty());
 
         // Act
-        Optional<Order> result = orderService.getClosestOrderedDeliveryDateForMedicine(medicineId);
+        Optional<Order> result = orderService.getClosestOrderedDeliveryDate(inventoryId);
 
         // Assert
         assertFalse(result.isPresent());
         verify(orderRepository, times(1))
-                .findFirstByMedicineIdAndStatusOrderedAndFutureDeliveryDate(currentDate, medicineId);
+                .findFirstOrderByInventoryIdAndStatusOrderedAndFutureDeliveryDate(currentDate, inventoryId);
     }
 
 
