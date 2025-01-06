@@ -42,7 +42,6 @@ class OrderControllerTest {
         inventory = new Inventory(1L, medicine, 100, true);
         orderRequest = new OrderRequest(
                 1L,
-                1L,
                 100,
                 LocalDate.of(2024, 12, 27)
         );

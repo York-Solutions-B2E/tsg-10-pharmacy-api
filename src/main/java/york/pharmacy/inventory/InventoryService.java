@@ -52,8 +52,7 @@ public class InventoryService {
                 .orElseThrow(() -> new ResourceNotFoundException("Inventory not found with id: " + id));
 
         // Fetch the closest delivery date for the associated medicine
-        Long medicineId = entity.getMedicine().getId();
-        Optional<Order> closestOrder = orderService.getClosestOrderedDeliveryDateForMedicine(medicineId);
+        Optional<Order> closestOrder = orderService.getClosestOrderedDeliveryDate(entity.getId());
 
         return InventoryMapper.toResponse(entity, closestOrder);
     }
@@ -62,8 +61,7 @@ public class InventoryService {
     public List<InventoryResponse> getAllInventories() {
         List<Inventory> entities = inventoryRepository.findAll();
         return entities.stream().map(entity -> {
-            Long medicineId = entity.getMedicine().getId();
-            Optional<Order> closestOrder = orderService.getClosestOrderedDeliveryDateForMedicine(medicineId);
+            Optional<Order> closestOrder = orderService.getClosestOrderedDeliveryDate(entity.getId());
             return InventoryMapper.toResponse(entity, closestOrder);
         }).collect(Collectors.toList());
     }

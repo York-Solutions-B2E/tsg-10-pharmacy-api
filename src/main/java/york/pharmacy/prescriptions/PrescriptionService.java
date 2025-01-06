@@ -96,7 +96,7 @@ public class PrescriptionService {
 
     public List<Prescription> updateAwaitingShipmentStatus(Order order) {
         List<PrescriptionStatus> statuses = List.of(PrescriptionStatus.NEW, PrescriptionStatus.OUT_OF_STOCK);
-        List<Prescription> prescriptions = prescriptionRepository.findAllByMedicineIdAndStatus(order.getMedicine().getId(), statuses);
+        List<Prescription> prescriptions = prescriptionRepository.findAllByMedicineIdAndStatus(order.getInventory().getMedicine().getId(), statuses);
         for (Prescription p : prescriptions) {
             p.setOrder(order);
             p.setStatus(PrescriptionStatus.AWAITING_SHIPMENT);

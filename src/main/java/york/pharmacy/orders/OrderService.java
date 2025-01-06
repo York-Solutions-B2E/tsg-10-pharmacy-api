@@ -5,8 +5,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import york.pharmacy.inventory.Inventory;
 import york.pharmacy.inventory.InventoryService;
-import york.pharmacy.medicines.Medicine;
-import york.pharmacy.medicines.MedicineService;
 import york.pharmacy.orders.dto.OrderRequest;
 import york.pharmacy.orders.dto.OrderResponse;
 import york.pharmacy.exceptions.ResourceNotFoundException;
@@ -21,16 +19,14 @@ import java.util.stream.Collectors;
 public class OrderService {
 
     private final OrderRepository orderRepository;
-    private final MedicineService medicineService;
     private final InventoryService inventoryService;
 
     // Create a single order
     @Transactional
     public OrderResponse createOrder(OrderRequest orderRequest) {
-        Medicine medicine = medicineService.fetchMedicineById(orderRequest.getMedicineId());
         Inventory inventory = inventoryService.fetchInventoryById(orderRequest.getInventoryId());
 
-        Order order = OrderMapper.toEntity(orderRequest, medicine, inventory);
+        Order order = OrderMapper.toEntity(orderRequest, inventory);
         Order savedOrder = orderRepository.save(order);
         return OrderMapper.toResponse(savedOrder);
     }
@@ -39,9 +35,8 @@ public class OrderService {
     @Transactional
     public List<OrderResponse> batchCreateOrders(List<OrderRequest> orderRequests) {
         List<Order> orders = orderRequests.stream().map(request -> {
-            Medicine medicine = medicineService.fetchMedicineById(request.getMedicineId());
             Inventory inventory = inventoryService.fetchInventoryById(request.getInventoryId());
-            return OrderMapper.toEntity(request, medicine, inventory);
+            return OrderMapper.toEntity(request, inventory);
         }).collect(Collectors.toList());
         List<Order> savedOrders = orderRepository.saveAll(orders);
         return savedOrders.stream().map(OrderMapper::toResponse).collect(Collectors.toList());
@@ -69,9 +64,6 @@ public class OrderService {
         Order order = orderRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Order with ID " + id + " not found"));
 
-        Medicine medicine = medicineService.fetchMedicineById(orderRequest.getMedicineId());
-
-        order.setMedicine(medicine);
         order.setQuantity(orderRequest.getQuantity());
         order.setDeliveryDate(orderRequest.getDeliveryDate());
         order.setStatus(orderRequest.getStatus());
@@ -99,11 +91,11 @@ public class OrderService {
         orderRepository.deleteById(id);
     }
 
-    // Helper Method - Return the closest upcoming delivery date for a specific medicine id (Filtered by "ORDERED" Status)
-    public Optional<Order> getClosestOrderedDeliveryDateForMedicine(Long medicineId) {
-        return orderRepository.findFirstByMedicineIdAndStatusOrderedAndFutureDeliveryDate(
+    // Helper Method - Return the closest upcoming delivery date for a specific inventory id (Filtered by "ORDERED" Status)
+    public Optional<Order> getClosestOrderedDeliveryDate(Long inventoryId) {
+        return orderRepository.findFirstOrderByInventoryIdAndStatusOrderedAndFutureDeliveryDate(
                 LocalDate.now(),
-                medicineId
+                inventoryId
         );
     }
 }
