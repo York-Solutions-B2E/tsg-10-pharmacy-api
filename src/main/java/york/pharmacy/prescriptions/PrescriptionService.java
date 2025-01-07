@@ -4,6 +4,8 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import york.pharmacy.exceptions.ResourceNotFoundException;
+import york.pharmacy.inventory.Inventory;
+import york.pharmacy.inventory.InventoryRepository;
 import york.pharmacy.inventory.InventoryService;
 import york.pharmacy.medicines.Medicine;
 import york.pharmacy.medicines.MedicineService;
@@ -19,11 +21,12 @@ import java.util.stream.Collectors;
 @Service
 @Transactional
 @RequiredArgsConstructor
-public class PrescriptionService {
+public class PrescriptionService implements PrescriptionServiceAdapter {
 
     private final PrescriptionRepository prescriptionRepository;
     private final MedicineService medicineService;
-    private final InventoryService inventoryService;
+
+    private final InventoryRepository inventoryRepository;
 
     // create a new prescription
     public PrescriptionResponse addPrescription(PrescriptionRequest prescriptionRequest) {
@@ -31,7 +34,7 @@ public class PrescriptionService {
         Prescription prescription = PrescriptionMapper.toEntity(prescriptionRequest, medicine);
         Prescription savedPrescription = prescriptionRepository.save(prescription);
         // Commenting out, since "sufficientStock" will be calculated at call time
-        //updateInventoryStockStatus(medicine.getId());
+        // updateInventoryStockStatus(medicine.getId());
         // Kafka publish RECEIVED
 
         return PrescriptionMapper.toResponse(savedPrescription);
@@ -72,23 +75,33 @@ public class PrescriptionService {
                 // notify Inventory to update stock
                 Long medicineId = prescription.getMedicine().getId();
                 int negativeCount = -prescription.getQuantity();
-                inventoryService.adjustStockQuantity(medicineId, negativeCount);
+
+                Inventory existingInv = inventoryRepository.findByMedicineId(medicineId)
+                        .orElseThrow(() ->
+                                new ResourceNotFoundException("No inventory for medicineId = " + medicineId));
+
+                int newQty = existingInv.getStockQuantity() + negativeCount;
+                if (newQty < 0) {
+                    throw new IllegalArgumentException("Cannot reduce stock below 0");
+                }
+                existingInv.setStockQuantity(newQty);
+                inventoryRepository.save(existingInv);
+
+                // Mark the prescription as FILLED
                 prescription.setStatus(status);
-
-                // kafka publish FILLED event
             } else {
-                throw new IllegalStateException("Prescription cannot be marked as FILLED from the current state: " + prescription.getStatus());
+                throw new IllegalStateException("Prescription cannot be marked as FILLED from the current state: "
+                        + prescription.getStatus());
             }
-
 
         } else if (status == PrescriptionStatus.PICKED_UP) {
             if (prescription.getStatus() == PrescriptionStatus.FILLED) {
-                // kafka publish PICKED_UP
+                // Just set status to PICKED_UP
                 prescription.setStatus(status);
             } else {
-                throw new IllegalStateException("Prescription cannot be marked as PICKED_UP from the current state: " + prescription.getStatus());
+                throw new IllegalStateException("Prescription cannot be marked as PICKED_UP from the current state: "
+                        + prescription.getStatus());
             }
-
         }
 
         Prescription updatedPrescription = prescriptionRepository.save(prescription);
@@ -130,13 +143,6 @@ public class PrescriptionService {
         prescriptionRepository.save(prescription);
     }
 
-    // need a helper function to return the needed count for new orders
-    public int minOrderCount(Long medicineId) {
-        List<PrescriptionStatus> statuses = List.of(PrescriptionStatus.NEW, PrescriptionStatus.OUT_OF_STOCK);
-
-        return prescriptionRepository.findTotalQuantityByMedicineIdAndStatus(medicineId, statuses);
-    }
-
     // send med id, total count of active prescriptions for that medicine
     // include STOCK_RECEIVED
     // Commenting out, since "sufficientStock" will be calculated at call time
@@ -151,5 +157,10 @@ public class PrescriptionService {
     }
      */
 
+    @Override
+    public int minOrderCount(Long medicineId) {
+        List<PrescriptionStatus> statuses = List.of(PrescriptionStatus.NEW, PrescriptionStatus.OUT_OF_STOCK);
+        return prescriptionRepository.findTotalQuantityByMedicineIdAndStatus(medicineId, statuses);
+    }
 
 }
