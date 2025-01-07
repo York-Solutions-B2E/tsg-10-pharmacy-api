@@ -6,7 +6,6 @@ import org.springframework.stereotype.Service;
 import york.pharmacy.exceptions.ResourceNotFoundException;
 import york.pharmacy.inventory.Inventory;
 import york.pharmacy.inventory.InventoryRepository;
-import york.pharmacy.inventory.InventoryService;
 import york.pharmacy.medicines.Medicine;
 import york.pharmacy.medicines.MedicineService;
 import york.pharmacy.orders.Order;
