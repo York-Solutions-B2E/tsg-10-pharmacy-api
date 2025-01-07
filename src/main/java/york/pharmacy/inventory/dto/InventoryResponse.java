@@ -18,4 +18,5 @@ public class InventoryResponse {
     private Integer stockQuantity;
     private Boolean sufficientStock;
     private LocalDate deliveryDate;
+    private Integer minimumOrderCount;
 }

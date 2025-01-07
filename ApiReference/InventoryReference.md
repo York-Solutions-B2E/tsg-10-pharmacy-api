@@ -164,11 +164,13 @@ No payload required.
   },
   "stockQuantity": 100,
   "sufficientStock": true,
-  "deliveryDate": "2025-01-09"
+  "deliveryDate": "2025-01-09",
+  "minimumOrderCount": "20"
 }
 ```
 
 If ID not found, returns 404 with error message.
+If there is no minimum order count, that field will read "0".
 
 ### Update One Inventory by ID
 
