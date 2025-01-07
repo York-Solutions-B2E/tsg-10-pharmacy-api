@@ -22,7 +22,7 @@ class OrderMapperTest {
     @BeforeEach
     void setUp() {
         medicine = new Medicine(1L, "Jelly Beans", "J-01", Instant.now(), Instant.now());
-        inventory = new Inventory(1L, medicine, 100, true);
+        inventory = new Inventory(1L, medicine, 100);
         orderRequest = new OrderRequest(1L, 100, LocalDate.of(2024, 12, 27));
         order = new Order(
                 1L,
