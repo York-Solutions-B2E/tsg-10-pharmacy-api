@@ -114,7 +114,7 @@ public class PrescriptionService {
             p.setStatus(PrescriptionStatus.STOCK_RECEIVED);
             Prescription savedPrescription = prescriptionRepository.save(p);
         }
-        updateInventoryStockStatus(order.getMedicine().getId());
+        updateInventoryStockStatus(order.getInventory().getMedicine().getId());
 
         return prescriptions;
     }
