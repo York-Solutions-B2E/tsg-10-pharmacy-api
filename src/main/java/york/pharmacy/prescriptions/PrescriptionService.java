@@ -30,7 +30,8 @@ public class PrescriptionService {
         Medicine medicine = medicineService.getMedicineByCode(prescriptionRequest.getMedicineCode()); // need to add this method
         Prescription prescription = PrescriptionMapper.toEntity(prescriptionRequest, medicine);
         Prescription savedPrescription = prescriptionRepository.save(prescription);
-        updateInventoryStockStatus(medicine.getId());
+        // Commenting out, since "sufficientStock" will be calculated at call time
+        //updateInventoryStockStatus(medicine.getId());
         // Kafka publish RECEIVED
 
         return PrescriptionMapper.toResponse(savedPrescription);
@@ -114,7 +115,8 @@ public class PrescriptionService {
             p.setStatus(PrescriptionStatus.STOCK_RECEIVED);
             Prescription savedPrescription = prescriptionRepository.save(p);
         }
-        updateInventoryStockStatus(order.getInventory().getMedicine().getId());
+        // Commenting out, since "sufficientStock" will be calculated at call time
+        //updateInventoryStockStatus(order.getInventory().getMedicine().getId());
 
         return prescriptions;
     }
@@ -137,6 +139,8 @@ public class PrescriptionService {
 
     // send med id, total count of active prescriptions for that medicine
     // include STOCK_RECEIVED
+    // Commenting out, since "sufficientStock" will be calculated at call time
+    /*
     public void updateInventoryStockStatus(Long medicineId) {
         List<PrescriptionStatus> statuses = List.of(PrescriptionStatus.NEW, PrescriptionStatus.OUT_OF_STOCK, PrescriptionStatus.STOCK_RECEIVED);
         HashMap<Long, Integer> medicineCount = new HashMap<>();
@@ -145,6 +149,7 @@ public class PrescriptionService {
         medicineCount.put(medicineId, totalCount);
         inventoryService.updateSufficientStock(medicineCount);
     }
+     */
 
 
 }
