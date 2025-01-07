@@ -1,7 +1,6 @@
 package york.pharmacy.prescriptions;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -223,7 +222,7 @@ class PrescriptionServiceTest {
             assertEquals(order, p.getOrder());
         }
 
-        // Verify save is called twice
+        // Verify save is called
         verify(prescriptionRepository, times(1)).save(any(Prescription.class));
 
         // Capture arguments passed to save
@@ -233,6 +232,62 @@ class PrescriptionServiceTest {
         List<Prescription> savedPrescriptions = captor.getAllValues();
         assertEquals(1, savedPrescriptions.size());
         assertTrue(savedPrescriptions.contains(prescription));
+    }
+
+    @Test
+    void updateStockReceivedStatus() {
+
+        Inventory inventory = new Inventory(1L, medicine, 500, true);
+        Order order = new Order(
+                123L,
+                inventory,
+                100,
+                LocalDate.of(2025, 02, 27),
+                OrderStatus.RECEIVED,
+                Instant.now(),
+                Instant.now()
+        );
+
+        Prescription prescription2 = new Prescription(
+                23L,
+                1254L,
+                medicine,
+                222L,
+                30,
+                "take after meals",
+                PrescriptionStatus.AWAITING_SHIPMENT,
+                order
+        );
+
+        List<Prescription> mockPrescriptions = List.of(prescription2);
+
+        when(prescriptionRepository.findAllByOrder(order))
+                .thenReturn(mockPrescriptions);
+
+        when(prescriptionRepository.save(any(Prescription.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));  // Return the same object
+
+        // Act
+        List<Prescription> updatedPrescriptions = underTest.updateStockReceivedStatus(order);
+
+        // Assert
+        assertEquals(1, updatedPrescriptions.size());
+
+        for (Prescription p : updatedPrescriptions) {
+            assertEquals(PrescriptionStatus.STOCK_RECEIVED, p.getStatus());
+            assertEquals(order, p.getOrder());
+        }
+
+        // Verify save is called
+        verify(prescriptionRepository, times(1)).save(any(Prescription.class));
+
+        // Capture arguments passed to save
+        ArgumentCaptor<Prescription> captor = ArgumentCaptor.forClass(Prescription.class);
+        verify(prescriptionRepository, times(1)).save(captor.capture());
+
+        List<Prescription> savedPrescriptions = captor.getAllValues();
+        assertEquals(1, savedPrescriptions.size());
+        assertTrue(savedPrescriptions.contains(prescription2));
     }
 
     @Test
@@ -246,11 +301,29 @@ class PrescriptionServiceTest {
     }
 
     @Test
+    void minOrderCount_shouldReturnTotalCount() {
+        // Arrange
+        Long medicineId = 1L;
+        int expectedCount = 30;
+        List<PrescriptionStatus> statuses = List.of(PrescriptionStatus.NEW, PrescriptionStatus.OUT_OF_STOCK);
+
+        when(prescriptionRepository.findTotalQuantityByMedicineIdAndStatus(medicineId, statuses)).thenReturn(expectedCount);
+
+        // Act
+        int result = underTest.minOrderCount(medicineId);
+
+        // Assert
+        assertEquals(expectedCount, result);
+        verify(prescriptionRepository, times(1)).findTotalQuantityByMedicineIdAndStatus(medicineId, statuses);
+    }
+
+    @Test
     void updateInventoryStockStatus() {
         Long medicineId = 1L;
         int totalQuantity = 50;
+        List<PrescriptionStatus> statuses = List.of(PrescriptionStatus.NEW, PrescriptionStatus.OUT_OF_STOCK, PrescriptionStatus.STOCK_RECEIVED);
 
-        when(prescriptionRepository.findTotalQuantityByMedicineIdAndStatus(medicineId))
+        when(prescriptionRepository.findTotalQuantityByMedicineIdAndStatus(medicineId, statuses))
                 .thenReturn(totalQuantity);
 
         // Act
@@ -260,7 +333,7 @@ class PrescriptionServiceTest {
         HashMap<Long, Integer> expectedMap = new HashMap<>();
         expectedMap.put(medicineId, totalQuantity);
 
-        verify(prescriptionRepository, times(1)).findTotalQuantityByMedicineIdAndStatus(medicineId);
+        verify(prescriptionRepository, times(1)).findTotalQuantityByMedicineIdAndStatus(medicineId, statuses);
         verify(inventoryService, times(1)).updateSufficientStock(expectedMap);
     }
 }

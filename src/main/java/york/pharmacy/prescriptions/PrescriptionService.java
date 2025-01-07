@@ -107,6 +107,18 @@ public class PrescriptionService {
         return prescriptions;
     }
 
+    public List<Prescription> updateStockReceivedStatus(Order order) {
+        List<Prescription> prescriptions = prescriptionRepository.findAllByOrder(order);
+
+        for (Prescription p : prescriptions) {
+            p.setStatus(PrescriptionStatus.STOCK_RECEIVED);
+            Prescription savedPrescription = prescriptionRepository.save(p);
+        }
+        updateInventoryStockStatus(order.getInventory().getMedicine().getId());
+
+        return prescriptions;
+    }
+
     // cancel prescription
     public void cancelPrescription(Long id) {
         Prescription prescription = prescriptionRepository.findById(id)
@@ -116,12 +128,23 @@ public class PrescriptionService {
         prescriptionRepository.save(prescription);
     }
 
+    // need a helper function to return the needed count for new orders
+    public int minOrderCount(Long medicineId) {
+        List<PrescriptionStatus> statuses = List.of(PrescriptionStatus.NEW, PrescriptionStatus.OUT_OF_STOCK);
+
+        return prescriptionRepository.findTotalQuantityByMedicineIdAndStatus(medicineId, statuses);
+    }
+
     // send med id, total count of active prescriptions for that medicine
+    // include STOCK_RECEIVED
     public void updateInventoryStockStatus(Long medicineId) {
+        List<PrescriptionStatus> statuses = List.of(PrescriptionStatus.NEW, PrescriptionStatus.OUT_OF_STOCK, PrescriptionStatus.STOCK_RECEIVED);
         HashMap<Long, Integer> medicineCount = new HashMap<>();
-        int totalCount = prescriptionRepository.findTotalQuantityByMedicineIdAndStatus(medicineId);
+        int totalCount = prescriptionRepository.findTotalQuantityByMedicineIdAndStatus(medicineId, statuses);
 
         medicineCount.put(medicineId, totalCount);
         inventoryService.updateSufficientStock(medicineCount);
     }
+
+
 }
