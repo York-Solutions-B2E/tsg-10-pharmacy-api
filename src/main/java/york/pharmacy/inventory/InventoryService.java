@@ -80,7 +80,7 @@ public class InventoryService {
 
         int neededPills = prescriptionService.minOrderCount(entity.getMedicine().getId());
 
-        Integer minOrderCount = null;
+        int minOrderCount = 0;
         int difference = neededPills - entity.getStockQuantity();
         if (difference > 0) {
             minOrderCount = difference;
