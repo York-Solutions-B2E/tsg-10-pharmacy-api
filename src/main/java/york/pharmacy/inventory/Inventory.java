@@ -10,7 +10,10 @@ import york.pharmacy.medicines.Medicine;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "inventory")
+@Table(name = "inventory",
+        uniqueConstraints = {
+                @UniqueConstraint(columnNames = {"medicine_id"})
+        })
 public class Inventory {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

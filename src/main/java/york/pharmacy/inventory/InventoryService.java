@@ -2,8 +2,10 @@ package york.pharmacy.inventory;
 
 import jakarta.transaction.Transactional;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import york.pharmacy.exceptions.ResourceNotFoundException;
+import york.pharmacy.exceptions.GlobalExceptionHandler;
 import york.pharmacy.inventory.dto.InventoryRequest;
 import york.pharmacy.inventory.dto.InventoryResponse;
 import york.pharmacy.inventory.dto.InventoryUpdateRequest;
@@ -32,19 +34,41 @@ public class InventoryService {
     }
 
     public InventoryResponse createInventory(InventoryRequest request) {
-        Medicine medicine = medicineService.fetchMedicineById(request.getMedicineId()); // Fetch Medicine entity
+        // Check if an Inventory with the same medicineId already exists
+        if (inventoryRepository.findByMedicineId(request.getMedicineId()).isPresent()) {
+            throw new DataIntegrityViolationException(
+                    "Inventory already exists for medicineId=" + request.getMedicineId()
+                            + ". Please use PUT to update instead."
+            );
+        }
+        // Otherwise proceed
+        Medicine medicine = medicineService.fetchMedicineById(request.getMedicineId());
         Inventory entity = InventoryMapper.toEntity(request, medicine);
         Inventory savedEntity = inventoryRepository.save(entity);
         return InventoryMapper.toResponse(savedEntity);
     }
 
     public List<InventoryResponse> createManyInventories(List<InventoryRequest> requests) {
+        // For each request, check if there's already an existing row
+        for (InventoryRequest req : requests) {
+            if (inventoryRepository.findByMedicineId(req.getMedicineId()).isPresent()) {
+                throw new DataIntegrityViolationException(
+                        "Inventory already exists for medicineId=" + req.getMedicineId()
+                                + ". Please use PUT to update instead."
+                );
+            }
+        }
         List<Inventory> entities = requests.stream().map(request -> {
             Medicine medicine = medicineService.fetchMedicineById(request.getMedicineId());
             return InventoryMapper.toEntity(request, medicine);
         }).collect(Collectors.toList());
+
         List<Inventory> savedEntities = inventoryRepository.saveAll(entities);
-        return savedEntities.stream().map(InventoryMapper::toResponse).collect(Collectors.toList());
+
+        return savedEntities
+                .stream()
+                .map(InventoryMapper::toResponse)
+                .collect(Collectors.toList());
     }
 
     public InventoryResponse getInventoryById(Long id) {
