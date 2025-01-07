@@ -8,9 +8,8 @@ import york.pharmacy.orders.dto.OrderResponse;
 public class OrderMapper {
 
     // Convert OrderRequest DTO to Order Entity
-    public static Order toEntity(OrderRequest orderRequest, Medicine medicine, Inventory inventory) {
+    public static Order toEntity(OrderRequest orderRequest, Inventory inventory) {
         Order order = new Order();
-        order.setMedicine(medicine);
         order.setInventory(inventory);
         order.setQuantity(orderRequest.getQuantity());
         order.setDeliveryDate(orderRequest.getDeliveryDate());

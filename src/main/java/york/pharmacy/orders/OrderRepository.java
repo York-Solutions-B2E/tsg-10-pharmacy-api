@@ -11,11 +11,9 @@ import java.util.Optional;
 
 @Repository
 public interface OrderRepository extends JpaRepository<Order, Long> {
-    Optional<List<Order>> findByMedicineIdAndStatus(Long medicineId, OrderStatus status);
-
-    @Query("SELECT o FROM Order o WHERE o.status = 'ORDERED' AND o.deliveryDate > :currentDate AND o.medicine.id = :medicineId ORDER BY o.deliveryDate ASC")
-    Optional<Order> findFirstByMedicineIdAndStatusOrderedAndFutureDeliveryDate(
+    @Query("SELECT o FROM Order o WHERE o.status = 'ORDERED' AND o.deliveryDate > :currentDate AND o.inventory.id = :inventoryId ORDER BY o.deliveryDate ASC LIMIT 1")
+    Optional<Order> findFirstOrderByInventoryIdAndStatusOrderedAndFutureDeliveryDate(
             @Param("currentDate") LocalDate currentDate,
-            @Param("medicineId") Long medicineId);
+            @Param("inventoryId") Long medicineId);
 
 }

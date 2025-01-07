@@ -77,36 +77,36 @@ public class DataInitializer implements CommandLineRunner {
     private void seedInventories() {
         System.out.println("Seeding Inventories...");
         List<InventoryRequest> inventoryRequests = List.of(
-                new InventoryRequest(1L, 100, true),
-                new InventoryRequest(2L, 200, true),
-                new InventoryRequest(3L, 150, true),
-                new InventoryRequest(4L, 180, true),
-                new InventoryRequest(5L, 90, true),
-                new InventoryRequest(6L, 120, true),
-                new InventoryRequest(7L, 140, true),
-                new InventoryRequest(8L, 160, true),
-                new InventoryRequest(9L, 110, true),
-                new InventoryRequest(10L, 130, true),
-                new InventoryRequest(11L, 170, true),
-                new InventoryRequest(12L, 190, true),
-                new InventoryRequest(13L, 100, true),
-                new InventoryRequest(14L, 105, true),
-                new InventoryRequest(15L, 115, true),
-                new InventoryRequest(16L, 125, true),
-                new InventoryRequest(17L, 135, true),
-                new InventoryRequest(18L, 145, true),
-                new InventoryRequest(19L, 155, true),
-                new InventoryRequest(20L, 165, true),
-                new InventoryRequest(21L, 175, true),
-                new InventoryRequest(22L, 185, true),
-                new InventoryRequest(23L, 195, true),
-                new InventoryRequest(24L, 205, true),
-                new InventoryRequest(25L, 215, true),
-                new InventoryRequest(26L, 225, true),
-                new InventoryRequest(27L, 235, true),
-                new InventoryRequest(28L, 245, true),
-                new InventoryRequest(29L, 255, true),
-                new InventoryRequest(30L, 265, true)
+                new InventoryRequest(1L, 100),
+                new InventoryRequest(2L, 200),
+                new InventoryRequest(3L, 150),
+                new InventoryRequest(4L, 180),
+                new InventoryRequest(5L, 90),
+                new InventoryRequest(6L, 120),
+                new InventoryRequest(7L, 140),
+                new InventoryRequest(8L, 160),
+                new InventoryRequest(9L, 110),
+                new InventoryRequest(10L, 130),
+                new InventoryRequest(11L, 170),
+                new InventoryRequest(12L, 190),
+                new InventoryRequest(13L, 100),
+                new InventoryRequest(14L, 105),
+                new InventoryRequest(15L, 115),
+                new InventoryRequest(16L, 125),
+                new InventoryRequest(17L, 135),
+                new InventoryRequest(18L, 145),
+                new InventoryRequest(19L, 155),
+                new InventoryRequest(20L, 165),
+                new InventoryRequest(21L, 175),
+                new InventoryRequest(22L, 185),
+                new InventoryRequest(23L, 195),
+                new InventoryRequest(24L, 205),
+                new InventoryRequest(25L, 215),
+                new InventoryRequest(26L, 225),
+                new InventoryRequest(27L, 235),
+                new InventoryRequest(28L, 245),
+                new InventoryRequest(29L, 255),
+                new InventoryRequest(30L, 265)
         );
 
         inventoryService.createManyInventories(inventoryRequests);
@@ -116,11 +116,11 @@ public class DataInitializer implements CommandLineRunner {
     private void seedOrders() {
         System.out.println("Seeding Orders...");
         List<OrderRequest> orderRequests = List.of(
-                new OrderRequest(1L, 1L, 100,LocalDate.now().plusDays(5)),
-                new OrderRequest(2L, 2L, 200, LocalDate.now().plusDays(10)),
-                new OrderRequest(3L, 3L, 300, LocalDate.now().plusDays(7)),
-                new OrderRequest(4L, 4L, 100, LocalDate.now().plusDays(3)),
-                new OrderRequest(5L, 5L, 200, LocalDate.now().plusDays(20))
+                new OrderRequest(1L, 100,LocalDate.now().plusDays(5)),
+                new OrderRequest( 2L, 200, LocalDate.now().plusDays(10)),
+                new OrderRequest( 3L, 300, LocalDate.now().plusDays(7)),
+                new OrderRequest( 4L, 100, LocalDate.now().plusDays(3)),
+                new OrderRequest( 5L, 200, LocalDate.now().plusDays(20))
         );
 
         orderService.batchCreateOrders(orderRequests);

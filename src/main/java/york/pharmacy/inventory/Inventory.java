@@ -10,7 +10,10 @@ import york.pharmacy.medicines.Medicine;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "inventory")
+@Table(name = "inventory",
+        uniqueConstraints = {
+                @UniqueConstraint(columnNames = {"medicine_id"})
+        })
 public class Inventory {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -23,6 +26,7 @@ public class Inventory {
     @Column(name = "stock_quantity", nullable = false)
     private Integer stockQuantity;
 
+    @Builder.Default
     @Column(name = "sufficient_stock")
-    private Boolean sufficientStock;
+    private Boolean sufficientStock = Boolean.TRUE;
 }

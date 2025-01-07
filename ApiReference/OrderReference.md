@@ -1,7 +1,7 @@
 
 # Order API Reference
 
-## 1. Create an Order
+## Create an Order
 **Endpoint**: `POST /api/orders`  
 **Method**: POST  
 **Headers**:
@@ -10,34 +10,39 @@
 **Request Body**:
 ```json
 {
-  "medicineId": 1,
+  "inventoryId": 1,
   "quantity": 100,
-  "deliveryDate": "2025-01-03"
+  "deliveryDate": "2025-01-09"
 }
 ```
 
 **Response**:
 ```json
 {
-  "id": 1,
-  "medicine": {
+  "id": 6,
+  "inventory": {
     "id": 1,
-    "name": "BerryBoost",
-    "code": "BBX-014",
-    "createdAt": "2025-01-02T22:03:19.284986Z",
-    "updatedAt": "2025-01-02T22:03:19.284986Z"
+    "medicine": {
+      "id": 1,
+      "name": "ChocoRelief",
+      "code": "CRX-001",
+      "createdAt": "2025-01-06T21:09:42.689349Z",
+      "updatedAt": "2025-01-06T21:09:42.689349Z"
+    },
+    "stockQuantity": 100,
+    "sufficientStock": true
   },
   "quantity": 100,
-  "deliveryDate": "2025-01-03",
+  "deliveryDate": "2025-01-09",
   "status": "ORDERED",
-  "createdAt": "2025-01-02T22:04:41.328750200Z",
-  "updatedAt": "2025-01-02T22:04:41.328750200Z"
+  "createdAt": "2025-01-06T21:11:23.986382300Z",
+  "updatedAt": "2025-01-06T21:11:23.986382300Z"
 }
 ```
 
 ---
 
-## 2. Create Multiple Orders (Batch)
+## Create Multiple Orders (Batch)
 **Endpoint**: `POST /api/orders/batch`  
 **Method**: POST  
 **Headers**:
@@ -47,12 +52,12 @@
 ```json
 [
   {
-    "medicineId": 1,
+    "inventoryId": 1,
     "quantity": 100,
     "deliveryDate": "2025-01-15"
   },
   {
-    "medicineId": 2,
+    "inventoryId": 2,
     "quantity": 50,
     "deliveryDate": "2025-01-28"
   }
@@ -63,41 +68,51 @@
 ```json
 [
   {
-    "id": 2,
-    "medicine": {
+    "id": 7,
+    "inventory": {
       "id": 1,
-      "name": "BerryBoost",
-      "code": "BBX-014",
-      "createdAt": "2025-01-02T22:03:19.284986Z",
-      "updatedAt": "2025-01-02T22:03:19.284986Z"
+      "medicine": {
+        "id": 1,
+        "name": "ChocoRelief",
+        "code": "CRX-001",
+        "createdAt": "2025-01-06T21:09:42.689349Z",
+        "updatedAt": "2025-01-06T21:09:42.689349Z"
+      },
+      "stockQuantity": 100,
+      "sufficientStock": true
     },
     "quantity": 100,
     "deliveryDate": "2025-01-15",
     "status": "ORDERED",
-    "createdAt": "2025-01-02T22:06:10.994086Z",
-    "updatedAt": "2025-01-02T22:06:10.994086Z"
+    "createdAt": "2025-01-06T21:12:27.037639100Z",
+    "updatedAt": "2025-01-06T21:12:27.037639100Z"
   },
   {
-    "id": 3,
-    "medicine": {
+    "id": 8,
+    "inventory": {
       "id": 2,
-      "name": "Lollipoprin",
-      "code": "LPX-005",
-      "createdAt": "2025-01-02T22:03:19.362863Z",
-      "updatedAt": "2025-01-02T22:03:19.362863Z"
+      "medicine": {
+        "id": 2,
+        "name": "MintyCure",
+        "code": "MCX-002",
+        "createdAt": "2025-01-06T21:09:42.762950Z",
+        "updatedAt": "2025-01-06T21:09:42.762950Z"
+      },
+      "stockQuantity": 200,
+      "sufficientStock": true
     },
     "quantity": 50,
     "deliveryDate": "2025-01-28",
     "status": "ORDERED",
-    "createdAt": "2025-01-02T22:06:10.996796500Z",
-    "updatedAt": "2025-01-02T22:06:10.996796500Z"
+    "createdAt": "2025-01-06T21:12:27.038672400Z",
+    "updatedAt": "2025-01-06T21:12:27.038672400Z"
   }
 ]
 ```
 
 ---
 
-## 3. Get All Orders
+## Get All Orders
 **Endpoint**: `GET /api/orders`  
 **Method**: GET
 
@@ -106,55 +121,50 @@
 [
   {
     "id": 1,
-    "medicine": {
+    "inventory": {
       "id": 1,
-      "name": "BerryBoost",
-      "code": "BBX-014",
-      "createdAt": "2025-01-02T22:03:19.284986Z",
-      "updatedAt": "2025-01-02T22:03:19.284986Z"
+      "medicine": {
+        "id": 1,
+        "name": "ChocoRelief",
+        "code": "CRX-001",
+        "createdAt": "2025-01-06T21:09:42.689349Z",
+        "updatedAt": "2025-01-06T21:09:42.689349Z"
+      },
+      "stockQuantity": 100,
+      "sufficientStock": true
     },
     "quantity": 100,
-    "deliveryDate": "2025-01-03",
+    "deliveryDate": "2025-01-11",
     "status": "ORDERED",
-    "createdAt": "2025-01-02T22:04:41.328750Z",
-    "updatedAt": "2025-01-02T22:04:41.328750Z"
+    "createdAt": "2025-01-06T21:09:42.857667Z",
+    "updatedAt": "2025-01-06T21:09:42.857667Z"
   },
   {
     "id": 2,
-    "medicine": {
-      "id": 1,
-      "name": "BerryBoost",
-      "code": "BBX-014",
-      "createdAt": "2025-01-02T22:03:19.284986Z",
-      "updatedAt": "2025-01-02T22:03:19.284986Z"
-    },
-    "quantity": 100,
-    "deliveryDate": "2025-01-15",
-    "status": "ORDERED",
-    "createdAt": "2025-01-02T22:06:10.994086Z",
-    "updatedAt": "2025-01-02T22:06:10.994086Z"
-  },
-  {
-    "id": 3,
-    "medicine": {
+    "inventory": {
       "id": 2,
-      "name": "Lollipoprin",
-      "code": "LPX-005",
-      "createdAt": "2025-01-02T22:03:19.362863Z",
-      "updatedAt": "2025-01-02T22:03:19.362863Z"
+      "medicine": {
+        "id": 2,
+        "name": "MintyCure",
+        "code": "MCX-002",
+        "createdAt": "2025-01-06T21:09:42.762950Z",
+        "updatedAt": "2025-01-06T21:09:42.762950Z"
+      },
+      "stockQuantity": 200,
+      "sufficientStock": true
     },
-    "quantity": 50,
-    "deliveryDate": "2025-01-28",
+    "quantity": 200,
+    "deliveryDate": "2025-01-16",
     "status": "ORDERED",
-    "createdAt": "2025-01-02T22:06:10.996797Z",
-    "updatedAt": "2025-01-02T22:06:10.996797Z"
+    "createdAt": "2025-01-06T21:09:42.860666Z",
+    "updatedAt": "2025-01-06T21:09:42.860666Z"
   }
 ]
 ```
 
 ---
 
-## 4. Get an Order by ID
+## Get an Order by ID
 **Endpoint**: `GET /api/orders/{id}`  
 **Method**: GET
 
@@ -164,46 +174,29 @@
 ```json
 {
   "id": 1,
-  "medicine": {
+  "inventory": {
     "id": 1,
-    "name": "BerryBoost",
-    "code": "BBX-014",
-    "createdAt": "2025-01-02T22:03:19.284986Z",
-    "updatedAt": "2025-01-02T22:03:19.284986Z"
+    "medicine": {
+      "id": 1,
+      "name": "ChocoRelief",
+      "code": "CRX-001",
+      "createdAt": "2025-01-06T21:09:42.689349Z",
+      "updatedAt": "2025-01-06T21:09:42.689349Z"
+    },
+    "stockQuantity": 100,
+    "sufficientStock": true
   },
   "quantity": 100,
-  "deliveryDate": "2025-01-03",
+  "deliveryDate": "2025-01-11",
   "status": "ORDERED",
-  "createdAt": "2025-01-02T22:04:41.328750Z",
-  "updatedAt": "2025-01-02T22:04:41.328750Z"
+  "createdAt": "2025-01-06T21:09:42.857667Z",
+  "updatedAt": "2025-01-06T21:09:42.857667Z"
 }
 ```
 
 ---
 
-## 5. Get Delivery Dates by Medicine ID
-**Endpoint**: `GET /api/orders/delivery-dates/{medicineId}`  
-**Method**: GET
-
-**Example**: `GET /api/orders/delivery-dates/1`
-
-**Response**:
-```json
-[
-  {
-    "orderId": 1,
-    "deliveryDate": "2025-01-03"
-  },
-  {
-    "orderId": 2,
-    "deliveryDate": "2025-01-15"
-  }
-]
-```
-
----
-
-## 6. Update an Order
+## Update an Order
 **Endpoint**: `PUT /api/orders/{id}`  
 **Method**: PUT  
 **Headers**:
@@ -214,9 +207,9 @@
 **Request Body**:
 ```json
 {
-  "medicineId": 1,
+  "inventoryId": 1,
   "quantity": 150,
-  "deliveryDate": "2025-01-03",
+  "deliveryDate": "2025-01-14",
   "status": "ORDERED"
 }
 ```
@@ -225,24 +218,29 @@
 ```json
 {
   "id": 1,
-  "medicine": {
+  "inventory": {
     "id": 1,
-    "name": "BerryBoost",
-    "code": "BBX-014",
-    "createdAt": "2025-01-02T22:03:19.284986Z",
-    "updatedAt": "2025-01-02T22:03:19.284986Z"
+    "medicine": {
+      "id": 1,
+      "name": "ChocoRelief",
+      "code": "CRX-001",
+      "createdAt": "2025-01-06T21:09:42.689349Z",
+      "updatedAt": "2025-01-06T21:09:42.689349Z"
+    },
+    "stockQuantity": 100,
+    "sufficientStock": true
   },
-  "quantity": 150,
-  "deliveryDate": "2025-01-03",
+  "quantity": 150,  // Updated quantity
+  "deliveryDate": "2025-01-14",  // Updated delivery date
   "status": "ORDERED",
-  "createdAt": "2025-01-02T22:04:41.328750Z",
-  "updatedAt": "2025-01-02T22:04:41.328750Z"
+  "createdAt": "2025-01-06T21:09:42.857667Z",
+  "updatedAt": "2025-01-06T21:09:42.857667Z"
 }
 ```
 
 ---
 
-## 7. Update Order Status to "RECEIVED"
+## Update Order Status to "RECEIVED"
 **Endpoint**: `PUT /api/orders/received/{id}`  
 **Method**: PUT
 
@@ -252,24 +250,29 @@
 ```json
 {
   "id": 1,
-  "medicine": {
+  "inventory": {
     "id": 1,
-    "name": "BerryBoost",
-    "code": "BBX-014",
-    "createdAt": "2025-01-02T22:03:19.284986Z",
-    "updatedAt": "2025-01-02T22:03:19.284986Z"
+    "medicine": {
+      "id": 1,
+      "name": "ChocoRelief",
+      "code": "CRX-001",
+      "createdAt": "2025-01-06T21:09:42.689349Z",
+      "updatedAt": "2025-01-06T21:09:42.689349Z"
+    },
+    "stockQuantity": 100,
+    "sufficientStock": true
   },
   "quantity": 150,
-  "deliveryDate": "2025-01-03",
-  "status": "RECEIVED",
-  "createdAt": "2025-01-02T22:04:41.328750Z",
-  "updatedAt": "2025-01-02T22:10:31.715257800Z"
+  "deliveryDate": "2025-01-14",
+  "status": "RECEIVED",  // Updated Status
+  "createdAt": "2025-01-06T21:09:42.857667Z",
+  "updatedAt": "2025-01-06T21:18:50.976304600Z"
 }
 ```
 
 ---
 
-## 8. Delete an Order by ID
+## Delete an Order by ID
 **Endpoint**: `DELETE /api/orders/{id}`  
 **Method**: DELETE
 

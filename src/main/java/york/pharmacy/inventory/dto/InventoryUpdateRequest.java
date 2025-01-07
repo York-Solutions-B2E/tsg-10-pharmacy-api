@@ -11,9 +11,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class InventoryRequest {
-    @NotNull(message = "Medicine ID is required")
-    private Long medicineId;
+public class InventoryUpdateRequest {
 
     @Min(value = 0, message = "Stock quantity must be non-negative")
     @NotNull(message = "Stock quantity is required")

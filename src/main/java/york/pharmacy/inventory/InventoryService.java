@@ -2,10 +2,13 @@ package york.pharmacy.inventory;
 
 import jakarta.transaction.Transactional;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import york.pharmacy.exceptions.ResourceNotFoundException;
+import york.pharmacy.exceptions.GlobalExceptionHandler;
 import york.pharmacy.inventory.dto.InventoryRequest;
 import york.pharmacy.inventory.dto.InventoryResponse;
+import york.pharmacy.inventory.dto.InventoryUpdateRequest;
 import york.pharmacy.medicines.Medicine;
 import york.pharmacy.medicines.MedicineService;
 import york.pharmacy.orders.Order;
@@ -31,19 +34,41 @@ public class InventoryService {
     }
 
     public InventoryResponse createInventory(InventoryRequest request) {
-        Medicine medicine = medicineService.fetchMedicineById(request.getMedicineId()); // Fetch Medicine entity
+        // Check if an Inventory with the same medicineId already exists
+        if (inventoryRepository.findByMedicineId(request.getMedicineId()).isPresent()) {
+            throw new DataIntegrityViolationException(
+                    "Inventory already exists for medicineId=" + request.getMedicineId()
+                            + ". Please use PUT to update instead."
+            );
+        }
+        // Otherwise proceed
+        Medicine medicine = medicineService.fetchMedicineById(request.getMedicineId());
         Inventory entity = InventoryMapper.toEntity(request, medicine);
         Inventory savedEntity = inventoryRepository.save(entity);
         return InventoryMapper.toResponse(savedEntity);
     }
 
     public List<InventoryResponse> createManyInventories(List<InventoryRequest> requests) {
+        // For each request, check if there's already an existing row
+        for (InventoryRequest req : requests) {
+            if (inventoryRepository.findByMedicineId(req.getMedicineId()).isPresent()) {
+                throw new DataIntegrityViolationException(
+                        "Inventory already exists for medicineId=" + req.getMedicineId()
+                                + ". Please use PUT to update instead."
+                );
+            }
+        }
         List<Inventory> entities = requests.stream().map(request -> {
             Medicine medicine = medicineService.fetchMedicineById(request.getMedicineId());
             return InventoryMapper.toEntity(request, medicine);
         }).collect(Collectors.toList());
+
         List<Inventory> savedEntities = inventoryRepository.saveAll(entities);
-        return savedEntities.stream().map(InventoryMapper::toResponse).collect(Collectors.toList());
+
+        return savedEntities
+                .stream()
+                .map(InventoryMapper::toResponse)
+                .collect(Collectors.toList());
     }
 
     public InventoryResponse getInventoryById(Long id) {
@@ -51,8 +76,7 @@ public class InventoryService {
                 .orElseThrow(() -> new ResourceNotFoundException("Inventory not found with id: " + id));
 
         // Fetch the closest delivery date for the associated medicine
-        Long medicineId = entity.getMedicine().getId();
-        Optional<Order> closestOrder = orderService.getClosestOrderedDeliveryDateForMedicine(medicineId);
+        Optional<Order> closestOrder = orderService.getClosestOrderedDeliveryDate(entity.getId());
 
         return InventoryMapper.toResponse(entity, closestOrder);
     }
@@ -61,8 +85,7 @@ public class InventoryService {
     public List<InventoryResponse> getAllInventories() {
         List<Inventory> entities = inventoryRepository.findAll();
         return entities.stream().map(entity -> {
-            Long medicineId = entity.getMedicine().getId();
-            Optional<Order> closestOrder = orderService.getClosestOrderedDeliveryDateForMedicine(medicineId);
+            Optional<Order> closestOrder = orderService.getClosestOrderedDeliveryDate(entity.getId());
             return InventoryMapper.toResponse(entity, closestOrder);
         }).collect(Collectors.toList());
     }
@@ -72,7 +95,16 @@ public class InventoryService {
                 .orElseThrow(() -> new ResourceNotFoundException("Inventory not found with id: " + id));
 
         existingEntity.setStockQuantity(request.getStockQuantity());
-        existingEntity.setSufficientStock(request.getSufficientStock());
+
+        Inventory updatedEntity = inventoryRepository.save(existingEntity);
+        return InventoryMapper.toResponse(updatedEntity);
+    }
+
+    public InventoryResponse updateInventoryStock(Long id, InventoryUpdateRequest request) {
+        Inventory existingEntity = inventoryRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Inventory not found with id: " + id));
+
+        existingEntity.setStockQuantity(request.getStockQuantity());
 
         Inventory updatedEntity = inventoryRepository.save(existingEntity);
         return InventoryMapper.toResponse(updatedEntity);

@@ -16,9 +16,6 @@ import java.time.LocalDate;
 @AllArgsConstructor
 public class OrderRequest {
 
-    @NotNull(message = "Medicine ID cannot be null")
-    private Long medicineId;
-
     @NotNull(message = "Inventory ID cannot be null")
     private Long inventoryId;
 
@@ -32,8 +29,7 @@ public class OrderRequest {
 
     private OrderStatus status;
 
-    public OrderRequest(Long medId, Long inventoryId, int quantity, LocalDate date) {
-        this.medicineId = medId;
+    public OrderRequest(Long inventoryId, int quantity, LocalDate date) {
         this.inventoryId = inventoryId;
         this.quantity = quantity;
         this.deliveryDate = date;

@@ -8,6 +8,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import york.pharmacy.inventory.dto.InventoryRequest;
 import york.pharmacy.inventory.dto.InventoryResponse;
+import york.pharmacy.inventory.dto.InventoryUpdateRequest;
 
 import java.util.List;
 
@@ -49,9 +50,9 @@ public class InventoryController {
     @PutMapping("/{id}")
     public ResponseEntity<InventoryResponse> update(
             @PathVariable @Min(1) Long id,
-            @Valid @RequestBody InventoryRequest request
+            @Valid @RequestBody InventoryUpdateRequest request
     ) {
-        InventoryResponse response = inventoryService.updateInventory(id, request);
+        InventoryResponse response = inventoryService.updateInventoryStock(id, request);
         return ResponseEntity.ok(response);
     }
 
