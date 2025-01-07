@@ -22,7 +22,6 @@ public class InventoryMapper {
                 .medicine(entity.getMedicine())
                 .stockQuantity(entity.getStockQuantity())
                 .deliveryDate(closestOrder.map(Order::getDeliveryDate).orElse(null))
-                .sufficientStock(entity.getSufficientStock())
                 .build();
     }
 
@@ -32,7 +31,6 @@ public class InventoryMapper {
                 .id(entity.getId())
                 .medicine(entity.getMedicine())
                 .stockQuantity(entity.getStockQuantity())
-                .sufficientStock(entity.getSufficientStock())
                 .build();
     }
 }

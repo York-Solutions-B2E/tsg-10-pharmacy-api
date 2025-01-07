@@ -181,7 +181,6 @@ class InventoryServiceTest {
                 .id(testId)
                 .medicine(medicine)     // testMedicineId = 2L from setUp()
                 .stockQuantity(testStockQuantity) // e.g. 10
-                .sufficientStock(false) // remains false unless the service changes it
                 .build();
 
         // The inventory after update: only stockQuantity changes from 10 -> 20
@@ -190,7 +189,6 @@ class InventoryServiceTest {
                 .id(testId)
                 .medicine(medicine)
                 .stockQuantity(20)
-                .sufficientStock(false)
                 .build();
 
         when(inventoryRepository.findById(testId))
@@ -219,7 +217,6 @@ class InventoryServiceTest {
                 savedInventory.getId().equals(testId)
                         && savedInventory.getMedicine().getId().equals(testMedicineId)
                         && savedInventory.getStockQuantity() == 20
-                        && Boolean.FALSE.equals(savedInventory.getSufficientStock())
         ));
     }
 
@@ -266,7 +263,6 @@ class InventoryServiceTest {
                 .id(testId)
                 .medicine(medicine)
                 .stockQuantity(testStockQuantity) // 10
-                .sufficientStock(true)            // default
                 .build();
 
         // Service sees stock is sufficient => stays true
@@ -298,7 +294,6 @@ class InventoryServiceTest {
                 .id(testId)
                 .medicine(medicine)
                 .stockQuantity(testStockQuantity)  // 10
-                .sufficientStock(true)             // default
                 .build();
 
         // Service "sees" stock is insufficient and sets to false
@@ -306,7 +301,6 @@ class InventoryServiceTest {
                 .id(testId)
                 .medicine(medicine)
                 .stockQuantity(testStockQuantity)  // still 10
-                .sufficientStock(false)            // forced to false
                 .build();
 
         when(inventoryRepository.findByMedicineId(testMedicineId))

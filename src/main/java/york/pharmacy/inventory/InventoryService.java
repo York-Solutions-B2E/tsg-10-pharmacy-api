@@ -137,16 +137,11 @@ public class InventoryService {
         Long medicineId = entry.getKey();
         Integer requiredPills = entry.getValue();
 
-        // Do some logic to return a minimumOrderNumber
-        // minimumOrderNumber = new+out_of_stock
-        //
-
         // Find inventory by medicineId
         Inventory existingEntity = inventoryRepository.findByMedicineId(medicineId)
                 .orElseThrow(() -> new ResourceNotFoundException("Inventory not found for medicine id: " + medicineId));
 
         boolean isSufficient = existingEntity.getStockQuantity() >= requiredPills;
-        existingEntity.setSufficientStock(isSufficient);
 
         Inventory updatedEntity = inventoryRepository.save(existingEntity);
         return InventoryMapper.toResponse(updatedEntity);
