@@ -1,5 +1,6 @@
 package york.pharmacy.inventory;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import york.pharmacy.inventory.dto.InventoryRequest;
 import york.pharmacy.inventory.dto.InventoryResponse;
 import org.junit.jupiter.api.BeforeEach;
@@ -388,4 +389,44 @@ class InventoryServiceTest {
         verify(inventoryRepository).findById(testId);
         verify(inventoryRepository, never()).save(any(Inventory.class));
     }
+
+    @Test
+    @DisplayName("Should throw DataIntegrityViolationException if duplicate medicineId is inserted (single create)")
+    void testCreateInventoryDuplicateMedicineId() {
+        // Given
+        // We simulate the DB or service constraint throwing DataIntegrityViolationException
+        doThrow(new DataIntegrityViolationException("Duplicate key"))
+                .when(inventoryRepository).save(any(Inventory.class));
+
+        // When/Then
+        assertThrows(DataIntegrityViolationException.class,
+                () -> inventoryService.createInventory(testRequest));
+
+        // The repository's save(...) was called once and threw
+        verify(inventoryRepository, times(1)).save(any(Inventory.class));
+    }
+
+    @Test
+    @DisplayName("Should throw DataIntegrityViolationException if duplicate medicineId is inserted in bulk create")
+    void testCreateManyInventoriesDuplicateMedicineId() {
+        // Given
+        // Let's reuse your existing testRequest plus a second request
+        InventoryRequest secondRequest = InventoryRequest.builder()
+                .medicineId(2L)     // Same medicineId as testRequest
+                .stockQuantity(20)
+                .build();
+        List<InventoryRequest> requests = Arrays.asList(testRequest, secondRequest);
+
+        // We simulate the DB or service constraint throwing DataIntegrityViolationException
+        doThrow(new DataIntegrityViolationException("Duplicate key"))
+                .when(inventoryRepository).saveAll(anyList());
+
+        // When/Then
+        assertThrows(DataIntegrityViolationException.class,
+                () -> inventoryService.createManyInventories(requests));
+
+        // The repository's saveAll(...) was called once and threw
+        verify(inventoryRepository, times(1)).saveAll(anyList());
+    }
+
 }
