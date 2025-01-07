@@ -15,8 +15,8 @@ import java.time.LocalDate;
 public class InventoryResponse {
     private Long id;
     private Medicine medicine;
-    private Integer stockQuantity;
-    private Boolean sufficientStock;
+    private int stockQuantity;
+    private boolean sufficientStock;
+    private int minimumOrderCount;
     private LocalDate deliveryDate;
-    private Integer minimumOrderCount;
 }
