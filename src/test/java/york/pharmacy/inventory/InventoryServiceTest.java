@@ -13,6 +13,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import york.pharmacy.medicines.Medicine;
 import york.pharmacy.medicines.MedicineService;
 import york.pharmacy.orders.OrderService;
+import york.pharmacy.prescriptions.PrescriptionService;
 
 import java.time.Instant;
 import java.util.Arrays;
@@ -34,6 +35,9 @@ class InventoryServiceTest {
 
     @Mock
     private OrderService orderService;
+
+    @Mock
+    private PrescriptionService prescriptionService;
 
     @InjectMocks
     private InventoryService inventoryService;
@@ -127,6 +131,7 @@ class InventoryServiceTest {
         // Given
         when(inventoryRepository.findById(testId))
                 .thenReturn(Optional.of(testInventory));
+        when(prescriptionService.minOrderCount(testMedicineId)).thenReturn(25);
 
         // When
         InventoryResponse result = inventoryService.getInventoryById(testId);
