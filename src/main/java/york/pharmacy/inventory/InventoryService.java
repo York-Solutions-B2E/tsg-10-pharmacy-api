@@ -13,6 +13,7 @@ import york.pharmacy.medicines.Medicine;
 import york.pharmacy.medicines.MedicineService;
 import york.pharmacy.orders.Order;
 import york.pharmacy.orders.OrderService;
+import york.pharmacy.prescriptions.PrescriptionService;
 
 import java.util.HashMap;
 import java.util.List;
@@ -26,11 +27,13 @@ public class InventoryService {
     private final InventoryRepository inventoryRepository;
     private final OrderService orderService;
     private final MedicineService medicineService;
+    private final PrescriptionService prescriptionService;
 
-    public InventoryService(InventoryRepository inventoryRepository, @Lazy OrderService orderService, MedicineService medicineService) {
+    public InventoryService(InventoryRepository inventoryRepository, @Lazy OrderService orderService, MedicineService medicineService, PrescriptionService prescriptionService) {
         this.inventoryRepository = inventoryRepository;
         this.orderService = orderService;
         this.medicineService = medicineService;
+        this.prescriptionService = prescriptionService;
     }
 
     public InventoryResponse createInventory(InventoryRequest request) {
@@ -75,10 +78,20 @@ public class InventoryService {
         Inventory entity = inventoryRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Inventory not found with id: " + id));
 
-        // Fetch the closest delivery date for the associated medicine
+        int neededPills = prescriptionService.minOrderCount(entity.getMedicine().getId());
+
+        Integer minOrderCount = null;
+        int difference = neededPills - entity.getStockQuantity();
+        if (difference > 0) {
+            minOrderCount = difference;
+        }
+
         Optional<Order> closestOrder = orderService.getClosestOrderedDeliveryDate(entity.getId());
 
-        return InventoryMapper.toResponse(entity, closestOrder);
+        InventoryResponse response = InventoryMapper.toResponse(entity, closestOrder);
+        response.setMinimumOrderCount(minOrderCount);
+
+        return response;
     }
 
 
@@ -123,6 +136,10 @@ public class InventoryService {
         Map.Entry<Long, Integer> entry = medicineCount.entrySet().iterator().next();
         Long medicineId = entry.getKey();
         Integer requiredPills = entry.getValue();
+
+        // Do some logic to return a minimumOrderNumber
+        // minimumOrderNumber = new+out_of_stock
+        //
 
         // Find inventory by medicineId
         Inventory existingEntity = inventoryRepository.findByMedicineId(medicineId)
