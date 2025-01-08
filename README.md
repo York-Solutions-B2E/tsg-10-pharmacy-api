@@ -39,9 +39,56 @@ Alternatively just use your IDE to run the tests with coverage.
 
 ## Running in Production
 [Back to Table of Contents](#table-of-contents)
+
+Set up the .env file
+```dotenv
+# PostgreSQL Database Configuration
+POSTGRES_DB=pharmacy
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=password
+
+# Spring Boot Application Configuration
+SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/pharmacy
+SPRING_DATASOURCE_USERNAME=postgres
+SPRING_DATASOURCE_PASSWORD=password
+SPRING_JPA_HIBERNATE_DDL_AUTO=create-drop
+SPRING_PROFILES_ACTIVE=prod
+
+# pgAdmin Configuration
+PGADMIN_DEFAULT_EMAIL=admin@admin.com
+PGADMIN_DEFAULT_PASSWORD=password
+
 ```
-TBD
+Run the API, Postgres, and the optional PgAdmin (DB GUI) Containers
+```bash
+docker compose up -d
 ```
+If you need to take the system down and apply changes
+```bash
+docker compose down
+docker compose --build -d
+```
+
+If you want to access the PgAdmin DB GUI easily you can create a JSON file to seed the necessary credentials and database details. You will also need to uncomment the PgAdmin script in docker-compose.yml.
+Create a file in root called "pgadmin_db_seed_list.json".
+```json
+{
+  "Servers": {
+    "1": {
+      "Name": "Pharmacy Database",
+      "Group": "Servers",
+      "Host": "postgres",
+      "Port": 5432,
+      "Username": "postgres",
+      "SSLMode": "prefer",
+      "MaintenanceDB": "pharmacy",
+      "Password": "password"
+    }
+  }
+}
+```
+
+
 # Endpoint References
 [Back to Table of Contents](#table-of-contents)
 
