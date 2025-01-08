@@ -33,6 +33,7 @@ sufficientStock: Boolean (optional)
   },
   "stockQuantity": 100,
   "sufficientStock": true,
+  "minimumOrderCount": 0,
   "deliveryDate": null
 }
 ```
@@ -41,6 +42,7 @@ id: Long (database-generated ID)\
 medicineId: Long\
 stockQuantity: Integer\
 sufficientStock: Boolean
+minimumOrderCount: Integer
 
 ### Create Many Inventories
 
@@ -77,6 +79,7 @@ Accepts an array of InventoryRequest objects.
     },
     "stockQuantity": 50,
     "sufficientStock": true,
+    "minimumOrderCount": 0,
     "deliveryDate": null
   },
   {
@@ -90,6 +93,7 @@ Accepts an array of InventoryRequest objects.
     },
     "stockQuantity": 75,
     "sufficientStock": true,
+    "minimumOrderCount": 0,
     "deliveryDate": null
   }
 ]

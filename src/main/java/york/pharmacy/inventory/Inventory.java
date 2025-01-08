@@ -26,7 +26,4 @@ public class Inventory {
     @Column(name = "stock_quantity", nullable = false)
     private Integer stockQuantity;
 
-    @Builder.Default
-    @Column(name = "sufficient_stock")
-    private Boolean sufficientStock = Boolean.TRUE;
 }

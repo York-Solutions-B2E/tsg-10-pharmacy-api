@@ -126,44 +126,87 @@ class InventoryServiceTest {
     }
 
     @Test
-    @DisplayName("Should get an existing Inventory by Id")
+    @DisplayName("Should calculate and return sufficientStock and minimumOrderCount in getInventoryById")
     void testGetInventoryById() {
         // Given
-        when(inventoryRepository.findById(testId))
-                .thenReturn(Optional.of(testInventory));
-        when(prescriptionService.minOrderCount(testMedicineId)).thenReturn(25);
+        int neededPills = 25; // Pills required as per prescriptionService
+        int stockQuantity = 30; // Inventory has sufficient stock
+
+        Inventory testInventory = Inventory.builder()
+                .id(testId)
+                .medicine(medicine)
+                .stockQuantity(stockQuantity)
+                .build();
+
+        when(inventoryRepository.findById(testId)).thenReturn(Optional.of(testInventory));
+        when(prescriptionService.minOrderCount(testMedicineId)).thenReturn(neededPills);
 
         // When
         InventoryResponse result = inventoryService.getInventoryById(testId);
 
         // Then
-        assertNotNull(result);
-        assertEquals(testMedicineId, result.getMedicine().getId());
+        assertNotNull(result, "Expected InventoryResponse to not be null");
+        assertEquals(testMedicineId, result.getMedicine().getId(),
+                "Expected medicine ID to match");
+        assertEquals(stockQuantity, result.getStockQuantity(),
+                "Expected stockQuantity to match the inventory stock");
+        assertTrue(result.isSufficientStock(),
+                "Expected sufficientStock to be true when stock >= needed");
+        assertEquals(0, result.getMinimumOrderCount(),
+                "Expected minimumOrderCount to be 0 when stock is sufficient");
+
+        // Verify repository and service calls
         verify(inventoryRepository, times(1)).findById(testId);
+        verify(prescriptionService, times(1)).minOrderCount(testMedicineId);
     }
 
     @Test
-    @DisplayName("Should retrieve all Inventory entries")
+    @DisplayName("Should calculate and return sufficientStock and minimumOrderCount in getAllInventories")
     void testGetAllInventories() {
         // Given
-        Inventory secondInventory = Inventory.builder()
-                .id(2L)
+        int neededPills1 = 15; // Less than stockQuantity1
+        int neededPills2 = 50; // Greater than stockQuantity2
+
+        Inventory inventory1 = Inventory.builder()
+                .id(1L)
                 .medicine(medicine)
-                .stockQuantity(20)
+                .stockQuantity(20) // Sufficient stock
                 .build();
 
-        when(inventoryRepository.findAll())
-                .thenReturn(Arrays.asList(testInventory, secondInventory));
+        Inventory inventory2 = Inventory.builder()
+                .id(2L)
+                .medicine(medicine)
+                .stockQuantity(40) // Insufficient stock
+                .build();
+
+        when(inventoryRepository.findAll()).thenReturn(Arrays.asList(inventory1, inventory2));
+        when(prescriptionService.minOrderCount(medicine.getId()))
+                .thenReturn(neededPills1, neededPills2); // Different required pills for each inventory
 
         // When
         var results = inventoryService.getAllInventories();
 
         // Then
-        assertNotNull(results);
-        assertEquals(2, results.size());
-        assertEquals(testMedicineId, results.get(0).getMedicine().getId());
-        assertEquals(2L, results.get(1).getMedicine().getId());
+        assertNotNull(results, "Expected results to not be null");
+        assertEquals(2, results.size(), "Expected two inventory responses");
+
+        InventoryResponse response1 = results.get(0);
+        assertEquals(1L, response1.getId(), "Expected ID to match inventory1");
+        assertTrue(response1.isSufficientStock(),
+                "Expected sufficientStock to be true for inventory1");
+        assertEquals(0, response1.getMinimumOrderCount(),
+                "Expected minimumOrderCount to be 0 for inventory1");
+
+        InventoryResponse response2 = results.get(1);
+        assertEquals(2L, response2.getId(), "Expected ID to match inventory2");
+        assertFalse(response2.isSufficientStock(),
+                "Expected sufficientStock to be false for inventory2");
+        assertEquals(10, response2.getMinimumOrderCount(),
+                "Expected minimumOrderCount to be 10 for inventory2");
+
+        // Verify repository and service calls
         verify(inventoryRepository, times(1)).findAll();
+        verify(prescriptionService, times(2)).minOrderCount(medicine.getId());
     }
 
     @Test
@@ -181,7 +224,6 @@ class InventoryServiceTest {
                 .id(testId)
                 .medicine(medicine)     // testMedicineId = 2L from setUp()
                 .stockQuantity(testStockQuantity) // e.g. 10
-                .sufficientStock(false) // remains false unless the service changes it
                 .build();
 
         // The inventory after update: only stockQuantity changes from 10 -> 20
@@ -190,7 +232,6 @@ class InventoryServiceTest {
                 .id(testId)
                 .medicine(medicine)
                 .stockQuantity(20)
-                .sufficientStock(false)
                 .build();
 
         when(inventoryRepository.findById(testId))
@@ -208,10 +249,6 @@ class InventoryServiceTest {
                 "MedicineId should remain the original (2L) despite the update attempt");
         assertEquals(20, result.getStockQuantity(),
                 "Stock quantity should be updated to 20");
-        // Because the service code doesn't change sufficientStock,
-        // we expect it to remain false (same as the original).
-        assertFalse(result.getSufficientStock(),
-                "Expected sufficientStock to remain false if service doesn't override it");
 
         // Verify the 'save' call was made with the correct final entity
         verify(inventoryRepository).findById(testId);
@@ -219,7 +256,6 @@ class InventoryServiceTest {
                 savedInventory.getId().equals(testId)
                         && savedInventory.getMedicine().getId().equals(testMedicineId)
                         && savedInventory.getStockQuantity() == 20
-                        && Boolean.FALSE.equals(savedInventory.getSufficientStock())
         ));
     }
 
@@ -254,75 +290,63 @@ class InventoryServiceTest {
     }
 
     @Test
-    @DisplayName("Should keep sufficientStock = true if current stock >= needed")
-    void testUpdateSufficientStockRemainsTrue() {
+    @DisplayName("Should calculate sufficientStock = true in getInventoryById when stock >= needed")
+    void testGetInventoryByIdSufficientStockTrue() {
+        int neededPills = 5; // Less than the 10 in stock
 
-        int requiredAmount = 5; // Less than the 10 in Inventory
-        HashMap<Long, Integer> medicineCount = new HashMap<>();
-        medicineCount.put(testMedicineId, requiredAmount);
-
-        // Already true by default
         Inventory inventoryInDb = Inventory.builder()
                 .id(testId)
                 .medicine(medicine)
                 .stockQuantity(testStockQuantity) // 10
-                .sufficientStock(true)            // default
                 .build();
 
-        // Service sees stock is sufficient => stays true
-        when(inventoryRepository.findByMedicineId(testMedicineId))
-                .thenReturn(Optional.of(inventoryInDb));
-        when(inventoryRepository.save(any(Inventory.class)))
-                .thenAnswer(invocation -> invocation.getArgument(0, Inventory.class));
-        // or .thenReturn(inventoryInDb) if you like
+        // Mock repository and service behavior
+        when(inventoryRepository.findById(testId)).thenReturn(Optional.of(inventoryInDb));
+        when(prescriptionService.minOrderCount(medicine.getId())).thenReturn(neededPills);
 
         // When
-        InventoryResponse result = inventoryService.updateSufficientStock(medicineCount);
+        InventoryResponse result = inventoryService.getInventoryById(testId);
 
         // Then
-        assertNotNull(result);
-        assertTrue(result.getSufficientStock(),
-                "Expected sufficientStock to remain true when stock >= needed");
+        assertNotNull(result, "Expected InventoryResponse to not be null");
+        assertTrue(result.isSufficientStock(),
+                "Expected sufficientStock to be true when stock >= needed");
+        assertEquals(testStockQuantity, result.getStockQuantity(),
+                "Expected stockQuantity to match the inventory in the database");
+
+        // Verify repository was queried
+        verify(inventoryRepository).findById(testId);
+        verify(prescriptionService).minOrderCount(medicine.getId());
     }
 
-
     @Test
-    @DisplayName("Should update sufficient stock status to false if current stock is less than needed")
-    void testUpdateSufficientStockBecomesFalse() {
-
-        int requiredAmount = testStockQuantity + 5; // 15 > 10, to test "sufficientStock"
-        HashMap<Long, Integer> medicineCount = new HashMap<>();
-        medicineCount.put(testMedicineId, requiredAmount);
+    @DisplayName("Should calculate sufficientStock = false in getInventoryById when stock < needed")
+    void testGetInventoryByIdSufficientStockFalse() {
+        int neededPills = testStockQuantity + 5; // 15 > 10
 
         Inventory inventoryInDb = Inventory.builder()
                 .id(testId)
                 .medicine(medicine)
-                .stockQuantity(testStockQuantity)  // 10
-                .sufficientStock(true)             // default
+                .stockQuantity(testStockQuantity) // 10
                 .build();
 
-        // Service "sees" stock is insufficient and sets to false
-        Inventory inventoryWithInsufficientStock = Inventory.builder()
-                .id(testId)
-                .medicine(medicine)
-                .stockQuantity(testStockQuantity)  // still 10
-                .sufficientStock(false)            // forced to false
-                .build();
-
-        when(inventoryRepository.findByMedicineId(testMedicineId))
-                .thenReturn(Optional.of(inventoryInDb));
-        when(inventoryRepository.save(any(Inventory.class)))
-                .thenReturn(inventoryWithInsufficientStock);
+        // Mock repository and service behavior
+        when(inventoryRepository.findById(testId)).thenReturn(Optional.of(inventoryInDb));
+        when(prescriptionService.minOrderCount(medicine.getId())).thenReturn(neededPills);
 
         // When
-        InventoryResponse result = inventoryService.updateSufficientStock(medicineCount);
+        InventoryResponse result = inventoryService.getInventoryById(testId);
 
         // Then
-        assertNotNull(result);
-        assertFalse(result.getSufficientStock(),
+        assertNotNull(result, "Expected InventoryResponse to not be null");
+        assertFalse(result.isSufficientStock(),
                 "Expected sufficientStock to be false when stock < needed");
-        verify(inventoryRepository).findByMedicineId(testMedicineId);
-        verify(inventoryRepository).save(any(Inventory.class));
+        assertEquals(testStockQuantity, result.getStockQuantity(),
+                "Expected stockQuantity to match the inventory in the database");
+
+        // Verify repository was queried
+        verify(inventoryRepository).findById(testId);
+        verify(prescriptionService).minOrderCount(medicine.getId());
     }
 
 

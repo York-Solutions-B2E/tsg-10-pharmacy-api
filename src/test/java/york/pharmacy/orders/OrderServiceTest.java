@@ -44,7 +44,7 @@ class OrderServiceTest {
     void setUp() {
 
         medicine = new Medicine(1L, "Jelly Beans", "J-01", Instant.now(), Instant.now());
-        inventory = new Inventory(1L, medicine, 500, true);
+        inventory = new Inventory(1L, medicine, 500);
 
         order = new Order(
                 1L,

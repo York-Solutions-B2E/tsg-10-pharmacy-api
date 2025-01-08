@@ -35,7 +35,6 @@ class InventoryMapperTest {
         assertNull(entity.getId());
         assertEquals(2L, entity.getMedicine().getId());
         assertEquals(100, entity.getStockQuantity());
-        assertTrue(entity.getSufficientStock());
     }
 
     @Test
@@ -52,7 +51,6 @@ class InventoryMapperTest {
         assertNull(entity.getId());
         assertEquals(2L, entity.getMedicine().getId());
         assertEquals(100, entity.getStockQuantity());
-        assertTrue(entity.getSufficientStock()); // Default value should be true
     }
 
     @Test
@@ -62,7 +60,6 @@ class InventoryMapperTest {
                 .id(1L)
                 .medicine(medicine)
                 .stockQuantity(50)
-                .sufficientStock(true)
                 .build();
 
         InventoryResponse response = InventoryMapper.toResponse(entity);
@@ -71,7 +68,6 @@ class InventoryMapperTest {
         assertEquals(1L, response.getId());
         assertEquals(2L, response.getMedicine().getId());
         assertEquals(50, response.getStockQuantity());
-        assertTrue(response.getSufficientStock());
     }
 
     @Test
@@ -89,6 +85,5 @@ class InventoryMapperTest {
         assertEquals(1L, response.getId());
         assertEquals(2L, response.getMedicine().getId());
         assertEquals(50, response.getStockQuantity());
-        assertTrue(response.getSufficientStock()); // Default value should be true
     }
 }

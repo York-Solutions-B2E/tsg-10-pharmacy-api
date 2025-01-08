@@ -39,7 +39,7 @@ class OrderControllerTest {
     @BeforeEach
     void setUp() {
         medicine = new Medicine(1L, "Jelly Bean", "J-01", Instant.now(), Instant.now());
-        inventory = new Inventory(1L, medicine, 100, true);
+        inventory = new Inventory(1L, medicine, 100);
         orderRequest = new OrderRequest(
                 1L,
                 100,

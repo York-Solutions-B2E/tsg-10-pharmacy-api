@@ -8,18 +8,17 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import york.pharmacy.inventory.Inventory;
-import york.pharmacy.inventory.InventoryService;
+import york.pharmacy.inventory.InventoryRepository; // <-- new import
 import york.pharmacy.medicines.Medicine;
 import york.pharmacy.medicines.MedicineService;
-import york.pharmacy.orders.OrderStatus;
 import york.pharmacy.orders.Order;
+import york.pharmacy.orders.OrderStatus;
 import york.pharmacy.prescriptions.dto.PrescriptionRequest;
 import york.pharmacy.prescriptions.dto.PrescriptionResponse;
 import york.pharmacy.prescriptions.dto.PrescriptionStatusRequest;
 
 import java.time.Instant;
 import java.time.LocalDate;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 
@@ -31,16 +30,21 @@ import static org.mockito.Mockito.*;
 class PrescriptionServiceTest {
 
     @Mock
-    PrescriptionRepository prescriptionRepository;
+    private PrescriptionRepository prescriptionRepository;
 
     @Mock
-    MedicineService medicineService;
+    private MedicineService medicineService;
+
+    // Remove InventoryService mock, since PrescriptionService no longer depends on InventoryService
+    // @Mock
+    // private InventoryService inventoryService;
 
     @Mock
-    InventoryService inventoryService;
+    private InventoryRepository inventoryRepository;
 
+    // This injects the above mocks into the PrescriptionService constructor
     @InjectMocks
-    PrescriptionService underTest;
+    private PrescriptionService underTest;
 
     private Prescription prescription;
     private PrescriptionRequest prescriptionRequest;
@@ -48,7 +52,6 @@ class PrescriptionServiceTest {
 
     @BeforeEach
     void setUp() {
-//        underTest = new PrescriptionService(prescriptionRepository, medicineService, inventoryService);
 
         medicine = new Medicine(1L, "Aspirin", "MED001", Instant.now(), Instant.now());
         prescriptionRequest = new PrescriptionRequest(
@@ -73,19 +76,22 @@ class PrescriptionServiceTest {
 
     @Test
     void addPrescription() {
-        when(medicineService.getMedicineByCode("MED001")).thenReturn(medicine);
-        when(prescriptionRepository.save(any(Prescription.class))).thenReturn(prescription);
+        when(medicineService.getMedicineByCode("MED001"))
+                .thenReturn(medicine);
+        when(prescriptionRepository.save(any(Prescription.class)))
+                .thenReturn(prescription);
 
         PrescriptionResponse response = underTest.addPrescription(prescriptionRequest);
 
         assertNotNull(response);
         assertEquals(1, response.getId());
-        verify(inventoryService, times(1)).updateSufficientStock(any());
+        
     }
 
     @Test
     void getAllPrescriptions() {
-        when(prescriptionRepository.findAll()).thenReturn(List.of(prescription));
+        when(prescriptionRepository.findAll())
+                .thenReturn(List.of(prescription));
 
         List<PrescriptionResponse> response = underTest.getAllPrescriptions();
 
@@ -96,18 +102,22 @@ class PrescriptionServiceTest {
 
     @Test
     void getActivePrescriptions() {
-        when(prescriptionRepository.findAllByStatusExcept(List.of(PrescriptionStatus.CANCELLED, PrescriptionStatus.PICKED_UP))).thenReturn(List.of(prescription));
+        when(prescriptionRepository.findAllByStatusExcept(
+                List.of(PrescriptionStatus.CANCELLED, PrescriptionStatus.PICKED_UP))
+        ).thenReturn(List.of(prescription));
 
         List<PrescriptionResponse> response = underTest.getActivePrescriptions();
 
         assertNotNull(response);
         assertEquals(1, response.size());
-        verify(prescriptionRepository, times(1)).findAllByStatusExcept(List.of(PrescriptionStatus.CANCELLED, PrescriptionStatus.PICKED_UP));
+        verify(prescriptionRepository, times(1))
+                .findAllByStatusExcept(List.of(PrescriptionStatus.CANCELLED, PrescriptionStatus.PICKED_UP));
     }
 
     @Test
     void getPrescriptionById() {
-        when(prescriptionRepository.findById(1L)).thenReturn(Optional.of(prescription));
+        when(prescriptionRepository.findById(1L))
+                .thenReturn(Optional.of(prescription));
 
         PrescriptionResponse response = underTest.getPrescriptionById(1L);
 
@@ -118,19 +128,36 @@ class PrescriptionServiceTest {
 
     @Test
     void updatePrescriptionFilled_success() {
+        // Prepare a request that sets status to FILLED
         PrescriptionStatusRequest statusRequest = new PrescriptionStatusRequest(PrescriptionStatus.FILLED);
 
-        when(prescriptionRepository.findById(1L)).thenReturn(Optional.of(prescription));
-        when(prescriptionRepository.save(any(Prescription.class))).thenReturn(prescription);
+        // The existing prescription is in status NEW => valid transition to FILLED
+        when(prescriptionRepository.findById(1L))
+                .thenReturn(Optional.of(prescription));
 
+        // Suppose the inventory row has stockQuantity=50
+        Inventory mockInventory = new Inventory(99L, medicine, 50);
+        when(inventoryRepository.findByMedicineId(medicine.getId()))
+                .thenReturn(Optional.of(mockInventory));
+
+        when(prescriptionRepository.save(any(Prescription.class)))
+                .thenReturn(prescription);
+
+        // Execute
         PrescriptionResponse response = underTest.updatePrescription(1L, statusRequest);
 
+        // Assert
         assertNotNull(response);
         assertEquals(PrescriptionStatus.FILLED, prescription.getStatus());
+
+        // We also expect that the inventory's stock got decreased by 30 (the prescription quantity)
+        // i.e. from 50 => 20
+        assertEquals(20, mockInventory.getStockQuantity());
     }
 
     @Test
     void updatePrescriptionPickedUp_success() {
+        // This prescription starts in FILLED => can go to PICKED_UP
         Prescription prescription2 = new Prescription(
                 23L,
                 1254L,
@@ -143,8 +170,10 @@ class PrescriptionServiceTest {
         );
         PrescriptionStatusRequest statusRequest = new PrescriptionStatusRequest(PrescriptionStatus.PICKED_UP);
 
-        when(prescriptionRepository.findById(23L)).thenReturn(Optional.of(prescription2));
-        when(prescriptionRepository.save(any(Prescription.class))).thenReturn(prescription2);
+        when(prescriptionRepository.findById(23L))
+                .thenReturn(Optional.of(prescription2));
+        when(prescriptionRepository.save(any(Prescription.class)))
+                .thenReturn(prescription2);
 
         PrescriptionResponse response = underTest.updatePrescription(23L, statusRequest);
 
@@ -154,6 +183,7 @@ class PrescriptionServiceTest {
 
     @Test
     void updatePrescriptionFilled_failure() {
+        // If the prescription is CANCELLED, it cannot go to FILLED
         Prescription prescription2 = new Prescription(
                 23L,
                 1254L,
@@ -166,38 +196,47 @@ class PrescriptionServiceTest {
         );
         PrescriptionStatusRequest statusRequest = new PrescriptionStatusRequest(PrescriptionStatus.FILLED);
 
-        when(prescriptionRepository.findById(23L)).thenReturn(Optional.of(prescription2));
+        when(prescriptionRepository.findById(23L))
+                .thenReturn(Optional.of(prescription2));
 
         IllegalStateException thrown = assertThrows(
                 IllegalStateException.class,
                 () -> underTest.updatePrescription(23L, statusRequest)
         );
 
-        assertEquals("Prescription cannot be marked as FILLED from the current state: CANCELLED", thrown.getMessage());
+        assertEquals(
+                "Prescription cannot be marked as FILLED from the current state: CANCELLED",
+                thrown.getMessage()
+        );
     }
 
     @Test
     void updatePrescriptionPickedUp_failure() {
+        // If the prescription is in NEW, it cannot go directly to PICKED_UP
         PrescriptionStatusRequest statusRequest = new PrescriptionStatusRequest(PrescriptionStatus.PICKED_UP);
 
-        when(prescriptionRepository.findById(1L)).thenReturn(Optional.of(prescription));
+        when(prescriptionRepository.findById(1L))
+                .thenReturn(Optional.of(prescription));
 
         IllegalStateException thrown = assertThrows(
                 IllegalStateException.class,
                 () -> underTest.updatePrescription(1L, statusRequest)
         );
 
-        assertEquals("Prescription cannot be marked as PICKED_UP from the current state: NEW", thrown.getMessage());
+        assertEquals(
+                "Prescription cannot be marked as PICKED_UP from the current state: NEW",
+                thrown.getMessage()
+        );
     }
 
     @Test
     void updateAwaitingShipmentStatus() {
-        Inventory inventory = new Inventory(1L, medicine, 500, true);
+        Inventory inventory = new Inventory(1L, medicine, 500);
         Order order = new Order(
                 123L,
                 inventory,
                 100,
-                LocalDate.of(2025, 02, 27),
+                LocalDate.of(2025, 2, 27),
                 OrderStatus.ORDERED,
                 Instant.now(),
                 Instant.now()
@@ -205,27 +244,24 @@ class PrescriptionServiceTest {
 
         List<Prescription> mockPrescriptions = List.of(prescription);
 
-        when(prescriptionRepository.findAllByMedicineIdAndStatus(1L, List.of(PrescriptionStatus.NEW, PrescriptionStatus.OUT_OF_STOCK)))
-                .thenReturn(mockPrescriptions);
+        when(prescriptionRepository.findAllByMedicineIdAndStatus(
+                1L,
+                List.of(PrescriptionStatus.NEW, PrescriptionStatus.OUT_OF_STOCK))
+        ).thenReturn(mockPrescriptions);
 
         when(prescriptionRepository.save(any(Prescription.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));  // Return the same object
 
-        // Act
         List<Prescription> updatedPrescriptions = underTest.updateAwaitingShipmentStatus(order);
 
-        // Assert
         assertEquals(1, updatedPrescriptions.size());
-
         for (Prescription p : updatedPrescriptions) {
             assertEquals(PrescriptionStatus.AWAITING_SHIPMENT, p.getStatus());
             assertEquals(order, p.getOrder());
         }
 
-        // Verify save is called
         verify(prescriptionRepository, times(1)).save(any(Prescription.class));
 
-        // Capture arguments passed to save
         ArgumentCaptor<Prescription> captor = ArgumentCaptor.forClass(Prescription.class);
         verify(prescriptionRepository, times(1)).save(captor.capture());
 
@@ -236,13 +272,12 @@ class PrescriptionServiceTest {
 
     @Test
     void updateStockReceivedStatus() {
-
-        Inventory inventory = new Inventory(1L, medicine, 500, true);
+        Inventory inventory = new Inventory(1L, medicine, 500);
         Order order = new Order(
                 123L,
                 inventory,
                 100,
-                LocalDate.of(2025, 02, 27),
+                LocalDate.of(2025, 2, 27),
                 OrderStatus.RECEIVED,
                 Instant.now(),
                 Instant.now()
@@ -267,21 +302,16 @@ class PrescriptionServiceTest {
         when(prescriptionRepository.save(any(Prescription.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));  // Return the same object
 
-        // Act
         List<Prescription> updatedPrescriptions = underTest.updateStockReceivedStatus(order);
 
-        // Assert
         assertEquals(1, updatedPrescriptions.size());
-
         for (Prescription p : updatedPrescriptions) {
             assertEquals(PrescriptionStatus.STOCK_RECEIVED, p.getStatus());
             assertEquals(order, p.getOrder());
         }
 
-        // Verify save is called
         verify(prescriptionRepository, times(1)).save(any(Prescription.class));
 
-        // Capture arguments passed to save
         ArgumentCaptor<Prescription> captor = ArgumentCaptor.forClass(Prescription.class);
         verify(prescriptionRepository, times(1)).save(captor.capture());
 
@@ -292,8 +322,10 @@ class PrescriptionServiceTest {
 
     @Test
     void cancelPrescription() {
-        when(prescriptionRepository.findById(1L)).thenReturn(Optional.of(prescription));
-        when(prescriptionRepository.save(any(Prescription.class))).thenReturn(prescription);
+        when(prescriptionRepository.findById(1L))
+                .thenReturn(Optional.of(prescription));
+        when(prescriptionRepository.save(any(Prescription.class)))
+                .thenReturn(prescription);
 
         underTest.cancelPrescription(1L);
 
@@ -302,38 +334,41 @@ class PrescriptionServiceTest {
 
     @Test
     void minOrderCount_shouldReturnTotalCount() {
-        // Arrange
         Long medicineId = 1L;
         int expectedCount = 30;
         List<PrescriptionStatus> statuses = List.of(PrescriptionStatus.NEW, PrescriptionStatus.OUT_OF_STOCK);
 
-        when(prescriptionRepository.findTotalQuantityByMedicineIdAndStatus(medicineId, statuses)).thenReturn(expectedCount);
+        when(prescriptionRepository.findTotalQuantityByMedicineIdAndStatus(medicineId, statuses))
+                .thenReturn(expectedCount);
 
-        // Act
         int result = underTest.minOrderCount(medicineId);
 
-        // Assert
         assertEquals(expectedCount, result);
-        verify(prescriptionRepository, times(1)).findTotalQuantityByMedicineIdAndStatus(medicineId, statuses);
+        verify(prescriptionRepository, times(1))
+                .findTotalQuantityByMedicineIdAndStatus(medicineId, statuses);
     }
 
+    /*
     @Test
     void updateInventoryStockStatus() {
         Long medicineId = 1L;
         int totalQuantity = 50;
-        List<PrescriptionStatus> statuses = List.of(PrescriptionStatus.NEW, PrescriptionStatus.OUT_OF_STOCK, PrescriptionStatus.STOCK_RECEIVED);
+        List<PrescriptionStatus> statuses = List.of(
+                PrescriptionStatus.NEW,
+                PrescriptionStatus.OUT_OF_STOCK,
+                PrescriptionStatus.STOCK_RECEIVED
+        );
 
         when(prescriptionRepository.findTotalQuantityByMedicineIdAndStatus(medicineId, statuses))
                 .thenReturn(totalQuantity);
 
-        // Act
-        underTest.updateInventoryStockStatus(medicineId);
+        // underTest.updateInventoryStockStatus(medicineId);
 
-        // Assert
         HashMap<Long, Integer> expectedMap = new HashMap<>();
         expectedMap.put(medicineId, totalQuantity);
 
-        verify(prescriptionRepository, times(1)).findTotalQuantityByMedicineIdAndStatus(medicineId, statuses);
-        verify(inventoryService, times(1)).updateSufficientStock(expectedMap);
+        verify(prescriptionRepository, times(1))
+                .findTotalQuantityByMedicineIdAndStatus(medicineId, statuses);
     }
+    */
 }
