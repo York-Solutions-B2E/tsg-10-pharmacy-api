@@ -28,9 +28,6 @@ public class PrescriptionController {
         // Get the medicine ID from the prescription response
         Long medicineId = prescriptionResponse.getMedicine().getId();
 
-        // Check and update stock status
-        serviceUtility.checkAndUpdatePrescriptionStock(medicineId, prescriptionResponse.getId());
-
         return new ResponseEntity<>(prescriptionResponse, HttpStatus.CREATED);
     }
 
