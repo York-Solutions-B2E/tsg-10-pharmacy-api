@@ -53,22 +53,19 @@ public class InventoryController {
             @Valid @RequestBody InventoryUpdateRequest request
     ) {
         InventoryResponse response = inventoryService.updateInventoryStock(id, request);
+
         return ResponseEntity.ok(response);
     }
 
     // Endpoint for pharmacists to manually add an amount of pills,
-    // and for "prescriptions" and "orders" tables to auto-adjust
+    // and for "prescriptions" and "orders" tables to auto-adjust;
+    // Front-end doesn't use this endpoint, so can probably delete
     @PutMapping("/{id}/adjust-stock/{pillAdjustment}")
     public ResponseEntity<InventoryResponse> adjustStockQuantity(
             @PathVariable Long id,
             @PathVariable Integer pillAdjustment) {
         // Update stock in db
         InventoryResponse response = inventoryService.adjustStockQuantity(id, pillAdjustment);
-        // Now update all prescriptions associated with that stock
-        serviceUtility.updatePrescriptionsWithNewStock(
-                response.getStockQuantity(),
-                response.getMedicine().getId()
-        );
 
         return ResponseEntity.ok(response);
     }
