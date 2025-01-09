@@ -44,4 +44,9 @@ public class ProducerEvent {
     public void setDeliveryDate(LocalDate deliveryDate) {
         this.deliveryDate = deliveryDate;
     }
+
+    @Override
+    public String toString() {
+        return "ProducerEvent [eventType: " + eventType + ", prescriptionId: " + prescriptionId + ", deliveryDate: " + deliveryDate + "]";
+    }
 }

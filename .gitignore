@@ -38,3 +38,5 @@ out/
 
 ###Kafka###
 kafka-data/
+
+.env
