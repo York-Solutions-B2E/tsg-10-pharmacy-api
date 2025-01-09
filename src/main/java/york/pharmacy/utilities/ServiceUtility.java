@@ -94,14 +94,17 @@ public class ServiceUtility {
         Medicine medicine = this.getMedicineByCode(prescriptionRequest.getMedicineCode()); // need to add this method
         Prescription prescription = PrescriptionMapper.toEntity(prescriptionRequest, medicine);
 
-        int amount = prescriptionRequest.getQuantity();
-        Long medicineId = medicine.getId();
-        // Call updatePrescriptionsWithNewStock here, and add to prescriptionService as well
-        updatePrescriptionsWithNewStock(amount, medicineId);
-
         // Kafka publish RECEIVED should happen here
 
         Prescription savedPrescription = prescriptionRepository.save(prescription);
+
+        Long medicineId = medicine.getId();
+        Long prescriptionId = savedPrescription.getId();
+        // Call updatePrescriptionsWithNewStock here, and add to prescriptionService as well
+        if (!checkAndUpdatePrescriptionStock(medicineId, prescriptionId)) {
+            savedPrescription.setStatus(PrescriptionStatus.OUT_OF_STOCK);
+            prescriptionRepository.save(savedPrescription);
+        }
 
         return PrescriptionMapper.toResponse(savedPrescription);
     }
@@ -182,9 +185,6 @@ public class ServiceUtility {
         if (currentStock < totalQuantityNeeded) {
             Prescription newPrescription = prescriptionRepository.findById(prescriptionId)
                     .orElseThrow(() -> new ResourceNotFoundException("Prescription not found with ID: " + prescriptionId));
-
-            newPrescription.setStatus(PrescriptionStatus.OUT_OF_STOCK);
-            prescriptionRepository.save(newPrescription);
             return false;
         }
 
@@ -223,8 +223,11 @@ public class ServiceUtility {
             }
 
             if (pillsNeeded <= currentStock) {
-                p.setStatus(PrescriptionStatus.STOCK_RECEIVED);
-                prescriptionRepository.save(p);
+
+                if (p.getStatus() == PrescriptionStatus.OUT_OF_STOCK) {
+                    p.setStatus(PrescriptionStatus.STOCK_RECEIVED);
+                    prescriptionRepository.save(p);
+                }
 
                 // Decrement the "currentStock"
                 currentStock -= pillsNeeded;
@@ -233,8 +236,6 @@ public class ServiceUtility {
                         () -> new ResourceNotFoundException("No inventory for given medicine")
                 ).getId();
 
-                // Update the Inventory each time (more DB writes, but safer)
-                inventoryRepository.setStockQuantity(inventoryId, currentStock);
             } else {
                 // If we can't fill it completely, mark it out_of_stock
                 p.setStatus(PrescriptionStatus.OUT_OF_STOCK);

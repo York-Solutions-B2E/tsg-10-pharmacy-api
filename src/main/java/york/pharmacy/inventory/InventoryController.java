@@ -21,7 +21,6 @@ import java.util.List;
 public class InventoryController {
 
     private final InventoryService inventoryService;
-    private final ServiceUtility serviceUtility;
 
     @PostMapping
     public ResponseEntity<InventoryResponse> createOne(@Valid @RequestBody InventoryRequest request) {

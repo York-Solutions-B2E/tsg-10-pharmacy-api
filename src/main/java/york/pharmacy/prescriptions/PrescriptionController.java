@@ -25,9 +25,6 @@ public class PrescriptionController {
     public ResponseEntity<PrescriptionResponse> createPrescription(@Valid @RequestBody PrescriptionRequest prescriptionRequest) {
         PrescriptionResponse prescriptionResponse = prescriptionService.addPrescription(prescriptionRequest);
 
-        // Get the medicine ID from the prescription response
-        Long medicineId = prescriptionResponse.getMedicine().getId();
-
         return new ResponseEntity<>(prescriptionResponse, HttpStatus.CREATED);
     }
 
