@@ -9,6 +9,7 @@ import york.pharmacy.orders.Order;
 import york.pharmacy.prescriptions.dto.PrescriptionResponse;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface PrescriptionRepository extends JpaRepository<Prescription, Long> {
@@ -27,4 +28,6 @@ public interface PrescriptionRepository extends JpaRepository<Prescription, Long
     List<Prescription> findAllByMedicineIdAndStatus(Long medicineId, List<PrescriptionStatus> statuses);
 
     List<Prescription> findAllByOrder(Order order);
+
+    Optional<Prescription> findByPrescriptionNumber(String prescriptionNumber);
 }

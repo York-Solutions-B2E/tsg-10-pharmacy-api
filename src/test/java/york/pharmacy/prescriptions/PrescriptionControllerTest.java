@@ -38,9 +38,9 @@ class PrescriptionControllerTest {
     void setUp() {
 
         prescriptionRequest = new PrescriptionRequest(
-                1L,
+                "1L",
                 "XOF03",
-                555L,
+                "555L",
                 30,
                 "Take after meals"
         );
@@ -50,9 +50,9 @@ class PrescriptionControllerTest {
         medicine.setName("Jelly Beans");
         prescriptionResponse = new PrescriptionResponse(
                 1L,
-                123L,
+                "123L",
                 medicine,
-                555L,
+                "555L",
                 30,
                 "Take after Meals",
                 PrescriptionStatus.NEW
@@ -110,9 +110,9 @@ class PrescriptionControllerTest {
     void updatePrescription() {
         PrescriptionResponse updatedResponse = new PrescriptionResponse(
                 1L,
-                123L,
+                "123L",
                 medicine,
-                555L,
+                "555L",
                 30,
                 "Take after Meals",
                 PrescriptionStatus.FILLED

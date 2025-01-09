@@ -21,18 +21,18 @@ class PrescriptionMapperTest {
     void setUp() {
         medicine = new Medicine(1L, "Aspirin", "MED001", Instant.now(), Instant.now());
         prescriptionRequest = new PrescriptionRequest(
-                1234L,
+                "1234L",
                 "MED001",
-                111L,
+                "111L",
                 30,
                 "Take after meals"
         );
 
         prescription = new Prescription(
                 1L,
-                1234L,
+                "1234L",
                 medicine,
-                111L,
+                "111L",
                 30,
                 "take after meals",
                 PrescriptionStatus.NEW,
@@ -47,7 +47,7 @@ class PrescriptionMapperTest {
         assertNotNull(mappedPrescription);
         assertEquals(medicine, mappedPrescription.getMedicine());
         assertEquals(PrescriptionStatus.NEW, mappedPrescription.getStatus());
-        assertEquals(1234L, mappedPrescription.getPatientId());
+        assertEquals("1234L", mappedPrescription.getPatientId());
     }
 
     @Test
@@ -58,9 +58,9 @@ class PrescriptionMapperTest {
         assertEquals(1L, response.getId());
         assertEquals(medicine, response.getMedicine());
         assertEquals(PrescriptionStatus.NEW, response.getStatus());
-        assertEquals(1234L, response.getPatientId());
+        assertEquals("1234L", response.getPatientId());
         assertEquals(30, response.getQuantity());
         assertEquals("take after meals", response.getInstructions());
-        assertEquals(111L, response.getPrescriptionNumber());
+        assertEquals("111L", response.getPrescriptionNumber());
     }
 }
