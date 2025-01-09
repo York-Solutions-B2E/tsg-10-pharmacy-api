@@ -128,13 +128,14 @@ public class ServiceUtility {
             p.setOrder(order);
             p.setStatus(PrescriptionStatus.AWAITING_SHIPMENT);
             //publish to kafka BACK_ORDERED, p.getPrescriptionNumber(), order.getDate()
+            
+            Prescription savedPrescription = prescriptionRepository.save(p);
             ProducerEvent event = new ProducerEvent(
                     "BACK_ORDERED",
                     p.getPrescriptionNumber(),
                     order.getDeliveryDate()
             );
             kafkaProducer.sendMessage("prescription_status_updates", event);
-            Prescription savedPrescription = prescriptionRepository.save(p);
         }
 
         return prescriptions;
