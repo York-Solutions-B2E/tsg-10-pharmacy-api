@@ -23,6 +23,10 @@ Enable Auto-Make:
 Go to File > Settings > Build, Execution, Deployment > Compiler.
 Check "Build project automatically".
 ```
+Start the Kafka service
+```bash
+docker-compose -f docker-compose.kafka.yml up -d
+```
 
 Start the API
 ```bash
