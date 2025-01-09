@@ -19,7 +19,7 @@ public class Prescription {
 
     @NotNull
     @Column(updatable = false)
-    private Long patientId;
+    private String patientId;
 
 
     @ManyToOne
@@ -28,7 +28,7 @@ public class Prescription {
 
     @NotNull
     @Column(updatable = false)
-    private Long prescriptionNumber;
+    private String prescriptionNumber;
 
     @NotNull
     @Column(updatable = false)

@@ -7,9 +7,11 @@ import york.pharmacy.inventory.Inventory;
 import york.pharmacy.inventory.InventoryMapper;
 import york.pharmacy.inventory.InventoryRepository;
 import york.pharmacy.inventory.dto.InventoryResponse;
+import york.pharmacy.kafka.KafkaProducer;
 import york.pharmacy.medicines.Medicine;
 import york.pharmacy.medicines.MedicineRepository;
 import york.pharmacy.medicines.MedicineService;
+import york.pharmacy.kafka.ProducerEvent;
 import york.pharmacy.orders.Order;
 import york.pharmacy.orders.OrderRepository;
 import york.pharmacy.prescriptions.Prescription;
@@ -32,6 +34,7 @@ public class ServiceUtility {
     private final InventoryRepository inventoryRepository;
     private final OrderRepository orderRepository;
     private final PrescriptionRepository prescriptionRepository;
+    private final KafkaProducer kafkaProducer;
 
     //------------------------------------------------------------------------------------------------------------------//
     // Medicine methods
@@ -97,14 +100,22 @@ public class ServiceUtility {
         Prescription savedPrescription = prescriptionRepository.save(prescription);
 //        updateInventoryStockStatus(medicine.getId());
         // Kafka publish RECEIVED
+        ProducerEvent event = new ProducerEvent(
+                "RECEIVED",
+                savedPrescription.getPrescriptionNumber()
+        );
+        kafkaProducer.sendMessage("prescription_status_updates", event);
 
         return PrescriptionMapper.toResponse(savedPrescription);
     }
 
     // cancel prescription
-    public void cancelPrescription(Long id) {
-        Prescription prescription = prescriptionRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Prescription with id" + id + " not found") );
+    // changed the id to prescriptionNumber since that's what's coming from Kafka
+    public void cancelPrescription(String prescriptionNumber) {
+//        Prescription prescription = prescriptionRepository.findById(id)
+//                .orElseThrow(() -> new ResourceNotFoundException("Prescription with id" + id + " not found") );
+        Prescription prescription = prescriptionRepository.findByPrescriptionNumber(prescriptionNumber).
+                orElseThrow(() -> new ResourceNotFoundException("Prescription with prescription number " + prescriptionNumber + " not found"));
 
         prescription.setStatus(PrescriptionStatus.CANCELLED);
         prescriptionRepository.save(prescription);
@@ -117,6 +128,12 @@ public class ServiceUtility {
             p.setOrder(order);
             p.setStatus(PrescriptionStatus.AWAITING_SHIPMENT);
             //publish to kafka BACK_ORDERED, p.getPrescriptionNumber(), order.getDate()
+            ProducerEvent event = new ProducerEvent(
+                    "BACK_ORDERED",
+                    p.getPrescriptionNumber(),
+                    order.getDeliveryDate()
+            );
+            kafkaProducer.sendMessage("prescription_status_updates", event);
             Prescription savedPrescription = prescriptionRepository.save(p);
         }
 
@@ -153,4 +170,16 @@ public class ServiceUtility {
 //        medicineCount.put(medicineId, totalCount);
 //        this.updateSufficientStock(medicineCount);
 //    }
+
+    //------------------------------------------------------------------------------------------------------------------//
+    // Kafka methods
+    //------------------------------------------------------------------------------------------------------------------//
+
+    public void publishPickedUpOrFilled(String eventType ,String prescriptionNumber) {
+        ProducerEvent event = new ProducerEvent(
+                eventType,
+                prescriptionNumber
+        );
+        kafkaProducer.sendMessage("prescription_status_updates", event);
+    }
 }

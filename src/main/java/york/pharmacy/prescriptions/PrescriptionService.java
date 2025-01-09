@@ -70,16 +70,15 @@ public class PrescriptionService {
                 int negativeCount = -prescription.getQuantity();
                 serviceUtility.adjustStockQuantity(medicineId, negativeCount);
                 prescription.setStatus(status);
+                serviceUtility.publishPickedUpOrFilled("FILLED", prescription.getPrescriptionNumber());
 
             } else {
                 throw new IllegalStateException("Prescription cannot be marked as FILLED from the current state: " + prescription.getStatus());
             }
-
-
         } else if (status == PrescriptionStatus.PICKED_UP) {
             if (prescription.getStatus() == PrescriptionStatus.FILLED) {
-                // kafka publish PICKED_UP
                 prescription.setStatus(status);
+                serviceUtility.publishPickedUpOrFilled("PICKED_UP", prescription.getPrescriptionNumber());
             } else {
                 throw new IllegalStateException("Prescription cannot be marked as PICKED_UP from the current state: " + prescription.getStatus());
             }

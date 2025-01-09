@@ -55,18 +55,18 @@ class PrescriptionServiceTest {
 
         medicine = new Medicine(1L, "Aspirin", "MED001", Instant.now(), Instant.now());
         prescriptionRequest = new PrescriptionRequest(
-                1234L,
+                "1234L",
                 "MED001",
-                111L,
+                "111L",
                 30,
                 "Take after meals"
         );
 
         prescription = new Prescription(
                 1L,
-                1234L,
+                "1234L",
                 medicine,
-                111L,
+                "111L",
                 30,
                 "take after meals",
                 PrescriptionStatus.NEW,
@@ -160,9 +160,9 @@ class PrescriptionServiceTest {
         // This prescription starts in FILLED => can go to PICKED_UP
         Prescription prescription2 = new Prescription(
                 23L,
-                1254L,
+                "1254L",
                 medicine,
-                222L,
+                "222L",
                 30,
                 "take after meals",
                 PrescriptionStatus.FILLED,
@@ -186,9 +186,9 @@ class PrescriptionServiceTest {
         // If the prescription is CANCELLED, it cannot go to FILLED
         Prescription prescription2 = new Prescription(
                 23L,
-                1254L,
+                "1254L",
                 medicine,
-                222L,
+                "222L",
                 30,
                 "take after meals",
                 PrescriptionStatus.CANCELLED,
@@ -285,9 +285,9 @@ class PrescriptionServiceTest {
 
         Prescription prescription2 = new Prescription(
                 23L,
-                1254L,
+                "1254L",
                 medicine,
-                222L,
+                "222L",
                 30,
                 "take after meals",
                 PrescriptionStatus.AWAITING_SHIPMENT,

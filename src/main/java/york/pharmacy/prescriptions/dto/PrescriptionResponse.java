@@ -12,9 +12,9 @@ import york.pharmacy.prescriptions.PrescriptionStatus;
 public class PrescriptionResponse {
 
     private Long id;
-    private Long patientId;
+    private String patientId;
     private Medicine medicine;
-    private Long prescriptionNumber;
+    private String prescriptionNumber;
     private int quantity;
     private String instructions;
     private PrescriptionStatus status;
