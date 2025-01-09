@@ -12,7 +12,7 @@ import york.pharmacy.medicines.Medicine;
 import york.pharmacy.medicines.MedicineService;
 import york.pharmacy.orders.Order;
 import york.pharmacy.orders.OrderService;
-import york.pharmacy.prescriptions.PrescriptionServiceAdapter;
+import york.pharmacy.utilities.ServiceUtility;
 
 import java.util.List;
 import java.util.Optional;
@@ -23,22 +23,14 @@ import java.util.stream.Collectors;
 public class InventoryService {
 
     private final InventoryRepository inventoryRepository;
-    private final OrderService orderService;
-    private final MedicineService medicineService;
-
-    // Use the interface, not the concrete class
-    private final PrescriptionServiceAdapter prescriptionServiceAdapter;
+    private final ServiceUtility serviceUtility;
 
     public InventoryService(
             InventoryRepository inventoryRepository,
-            @Lazy OrderService orderService,
-            MedicineService medicineService,
-            PrescriptionServiceAdapter prescriptionServiceAdapter
+            ServiceUtility serviceUtility
     ) {
         this.inventoryRepository = inventoryRepository;
-        this.orderService = orderService;
-        this.medicineService = medicineService;
-        this.prescriptionServiceAdapter = prescriptionServiceAdapter;
+        this.serviceUtility = serviceUtility;
     }
 
     public InventoryResponse createInventory(InventoryRequest request) {
@@ -48,7 +40,7 @@ public class InventoryService {
                             + ". Please use PUT to update instead."
             );
         }
-        Medicine medicine = medicineService.fetchMedicineById(request.getMedicineId());
+        Medicine medicine = serviceUtility.fetchMedicineById(request.getMedicineId());
         Inventory entity = InventoryMapper.toEntity(request, medicine);
         Inventory savedEntity = inventoryRepository.save(entity);
         return InventoryMapper.toResponse(savedEntity);
@@ -65,7 +57,7 @@ public class InventoryService {
         }
         List<Inventory> entities = requests.stream()
                 .map(request -> {
-                    Medicine medicine = medicineService.fetchMedicineById(request.getMedicineId());
+                    Medicine medicine = serviceUtility.fetchMedicineById(request.getMedicineId());
                     return InventoryMapper.toEntity(request, medicine);
                 })
                 .collect(Collectors.toList());
@@ -82,11 +74,11 @@ public class InventoryService {
                         new ResourceNotFoundException("Inventory not found with id: " + id));
 
         // Use the adapter method
-        int neededPills = prescriptionServiceAdapter.minOrderCount(entity.getMedicine().getId());
+        int neededPills = serviceUtility.minOrderCount(entity.getMedicine().getId());
         int minOrderCount = Math.max(0, neededPills - entity.getStockQuantity());
         boolean sufficientStock = entity.getStockQuantity() >= neededPills;
 
-        Optional<Order> closestOrder = orderService.getClosestOrderedDeliveryDate(entity.getId());
+        Optional<Order> closestOrder = serviceUtility.getClosestOrderedDeliveryDate(entity.getId());
 
         InventoryResponse response = InventoryMapper.toResponse(entity, closestOrder);
         response.setMinimumOrderCount(minOrderCount);
@@ -100,11 +92,11 @@ public class InventoryService {
         return entities.stream()
                 .map(entity -> {
                     // Note: replaced prescriptionService with prescriptionServiceAdapter
-                    int neededPills = prescriptionServiceAdapter.minOrderCount(entity.getMedicine().getId());
+                    int neededPills = serviceUtility.minOrderCount(entity.getMedicine().getId());
                     int minOrderCount = Math.max(0, neededPills - entity.getStockQuantity());
                     boolean sufficientStock = entity.getStockQuantity() >= neededPills;
 
-                    Optional<Order> closestOrder = orderService.getClosestOrderedDeliveryDate(entity.getId());
+                    Optional<Order> closestOrder = serviceUtility.getClosestOrderedDeliveryDate(entity.getId());
                     InventoryResponse response = InventoryMapper.toResponse(entity, closestOrder);
 
                     response.setMinimumOrderCount(minOrderCount);
@@ -157,10 +149,4 @@ public class InventoryService {
         return InventoryMapper.toResponse(updatedEntity);
     }
 
-    // Helper method - Used in service layer to fetch Inventory entity by ID
-    public Inventory fetchInventoryById(Long id) {
-        return inventoryRepository.findById(id)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException("Inventory with ID " + id + " not found"));
-    }
 }

@@ -8,6 +8,7 @@ import york.pharmacy.inventory.InventoryService;
 import york.pharmacy.orders.dto.OrderRequest;
 import york.pharmacy.orders.dto.OrderResponse;
 import york.pharmacy.exceptions.ResourceNotFoundException;
+import york.pharmacy.utilities.ServiceUtility;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -19,15 +20,18 @@ import java.util.stream.Collectors;
 public class OrderService {
 
     private final OrderRepository orderRepository;
-    private final InventoryService inventoryService;
+    private final ServiceUtility serviceUtility;
 
     // Create a single order
     @Transactional
     public OrderResponse createOrder(OrderRequest orderRequest) {
-        Inventory inventory = inventoryService.fetchInventoryById(orderRequest.getInventoryId());
+        Inventory inventory = serviceUtility.fetchInventoryById(orderRequest.getInventoryId());
 
         Order order = OrderMapper.toEntity(orderRequest, inventory);
         Order savedOrder = orderRepository.save(order);
+
+        serviceUtility.updateAwaitingShipmentStatus(savedOrder);
+
         return OrderMapper.toResponse(savedOrder);
     }
 
@@ -35,10 +39,13 @@ public class OrderService {
     @Transactional
     public List<OrderResponse> batchCreateOrders(List<OrderRequest> orderRequests) {
         List<Order> orders = orderRequests.stream().map(request -> {
-            Inventory inventory = inventoryService.fetchInventoryById(request.getInventoryId());
+            Inventory inventory = serviceUtility.fetchInventoryById(request.getInventoryId());
             return OrderMapper.toEntity(request, inventory);
         }).collect(Collectors.toList());
         List<Order> savedOrders = orderRepository.saveAll(orders);
+
+        savedOrders.forEach(serviceUtility::updateAwaitingShipmentStatus);
+
         return savedOrders.stream().map(OrderMapper::toResponse).collect(Collectors.toList());
     }
 
@@ -79,6 +86,10 @@ public class OrderService {
 
         order.setStatus(OrderStatus.RECEIVED);
         Order updatedOrder = orderRepository.save(order);
+
+        serviceUtility.updateStockReceivedStatus(updatedOrder);
+        serviceUtility.adjustStockQuantity(updatedOrder.getInventory().getId(), updatedOrder.getQuantity());
+
         return OrderMapper.toResponse(updatedOrder);
     }
 
@@ -91,11 +102,4 @@ public class OrderService {
         orderRepository.deleteById(id);
     }
 
-    // Helper Method - Return the closest upcoming delivery date for a specific inventory id (Filtered by "ORDERED" Status)
-    public Optional<Order> getClosestOrderedDeliveryDate(Long inventoryId) {
-        return orderRepository.findFirstOrderByInventoryIdAndStatusOrderedAndFutureDeliveryDate(
-                LocalDate.now(),
-                inventoryId
-        );
-    }
 }
