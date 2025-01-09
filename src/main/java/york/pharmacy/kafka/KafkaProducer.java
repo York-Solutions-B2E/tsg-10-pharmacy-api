@@ -12,6 +12,6 @@ public class KafkaProducer {
 
     public void sendMessage(String topic, ProducerEvent e) {
         kafkaTemplate.send(topic, e);
-//        System.out.println("Message sent: " + e);
+        System.out.println("Message sent: " + e.toString());
     }
 }
