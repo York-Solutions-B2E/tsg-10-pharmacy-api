@@ -15,13 +15,13 @@ import york.pharmacy.prescriptions.PrescriptionStatus;
 public class PrescriptionRequest {
 
     @NotNull
-    private Long patientId;
+    private String patientId;
 
     @NotNull
     private String medicineCode;
 
     @NotNull
-    private Long prescriptionNumber;
+    private String prescriptionNumber;
 
     @NotNull
     private int quantity;
