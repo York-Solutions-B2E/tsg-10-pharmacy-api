@@ -93,9 +93,15 @@ public class ServiceUtility {
     public PrescriptionResponse addPrescription(PrescriptionRequest prescriptionRequest) {
         Medicine medicine = this.getMedicineByCode(prescriptionRequest.getMedicineCode()); // need to add this method
         Prescription prescription = PrescriptionMapper.toEntity(prescriptionRequest, medicine);
+
+        int amount = prescriptionRequest.getQuantity();
+        Long medicineId = medicine.getId();
+        // Call updatePrescriptionsWithNewStock here, and add to prescriptionService as well
+        updatePrescriptionsWithNewStock(amount, medicineId);
+
+        // Kafka publish RECEIVED should happen here
+
         Prescription savedPrescription = prescriptionRepository.save(prescription);
-//        updateInventoryStockStatus(medicine.getId());
-        // Kafka publish RECEIVED
 
         return PrescriptionMapper.toResponse(savedPrescription);
     }
@@ -147,54 +153,6 @@ public class ServiceUtility {
     //  -----------
 
     /**
-     * Update the inventory's stock quantity to the given value, then update
-     * all prescriptions (that are currently in {@link PrescriptionStatus#NEW} or
-     * {@link PrescriptionStatus#OUT_OF_STOCK}) to {@link PrescriptionStatus#STOCK_RECEIVED}
-     * as long as there is enough stock to fulfill them. Decrement the stock
-     * quantity as you go. Break out when you're out of stock.
-     *
-     * @param newStockQuantity an updated total number of pills in the inventory.
-     * @param medicineId       the primary key (ID) of the Medicine table.
-     */
-    public void updatePrescriptionsWithNewStock(int newStockQuantity, Long medicineId) {
-
-        // Are these the right statuses?
-        List<PrescriptionStatus> statusesToUpdate = List.of(
-                PrescriptionStatus.NEW,
-                PrescriptionStatus.OUT_OF_STOCK,
-                PrescriptionStatus.AWAITING_SHIPMENT
-        );
-        List<Prescription> pendingPrescriptions =
-                prescriptionRepository.findAllByMedicineIdAndStatus(medicineId, statusesToUpdate);
-
-        // Decrement from newStockQuantity as we fulfill prescriptions
-        int currentStock = newStockQuantity;
-        for (Prescription p : pendingPrescriptions) {
-            int pillsNeeded = p.getQuantity();
-
-            // If no more stock is left, break early
-            if (currentStock <= 0) {
-                break;
-            }
-
-            if (pillsNeeded <= currentStock) {
-                p.setStatus(PrescriptionStatus.STOCK_RECEIVED);
-                prescriptionRepository.save(p);
-
-                // Decrement the "currentStock"
-                currentStock -= pillsNeeded;
-
-                Long inventoryId = inventoryRepository.findById(medicineId).get().getId();
-
-                // Update the Inventory each time (more DB writes, but safer)
-                inventoryRepository.setStockQuantity(inventoryId, currentStock);
-            } else {
-            // Skip this prescription since we can't fill it completely
-            }
-        }
-    }
-
-    /**
      * Checks if there is sufficient inventory for prescriptions and updates status accordingly
      * @param medicineId The ID of the medicine to check
      * @param prescriptionId The ID of the new prescription to check
@@ -231,6 +189,57 @@ public class ServiceUtility {
         }
 
         return true;
+    }
+
+    /**
+     * Update the inventory's stock quantity to the given value, then update
+     * all prescriptions (that are currently in {@link PrescriptionStatus#NEW} or
+     * {@link PrescriptionStatus#OUT_OF_STOCK}) to {@link PrescriptionStatus#STOCK_RECEIVED}
+     * as long as there is enough stock to fulfill them. Decrement the stock
+     * quantity as you go. Break out when you're out of stock.
+     *
+     * @param newStockQuantity an updated total number of pills in the inventory.
+     * @param medicineId       the primary key (ID) of the Medicine table.
+     */
+    public void updatePrescriptionsWithNewStock(int newStockQuantity, Long medicineId) {
+
+        // Are these the right statuses?
+        List<PrescriptionStatus> statusesToUpdate = List.of(
+                PrescriptionStatus.NEW,
+                PrescriptionStatus.OUT_OF_STOCK,
+                PrescriptionStatus.STOCK_RECEIVED
+        );
+        List<Prescription> pendingPrescriptions =
+                prescriptionRepository.findAllByMedicineIdAndStatus(medicineId, statusesToUpdate);
+
+        // Decrement from newStockQuantity as we fulfill prescriptions
+        int currentStock = newStockQuantity;
+        for (Prescription p : pendingPrescriptions) {
+            int pillsNeeded = p.getQuantity();
+
+            // If no more stock is left, break early
+            if (currentStock <= 0) {
+                break;
+            }
+
+            if (pillsNeeded <= currentStock) {
+                p.setStatus(PrescriptionStatus.STOCK_RECEIVED);
+                prescriptionRepository.save(p);
+
+                // Decrement the "currentStock"
+                currentStock -= pillsNeeded;
+
+                Long inventoryId = inventoryRepository.findByMedicineId(medicineId).orElseThrow(
+                        () -> new ResourceNotFoundException("No inventory for given medicine")
+                ).getId();
+
+                // Update the Inventory each time (more DB writes, but safer)
+                inventoryRepository.setStockQuantity(inventoryId, currentStock);
+            } else {
+                // If we can't fill it completely, mark it out_of_stock
+                p.setStatus(PrescriptionStatus.OUT_OF_STOCK);
+            }
+        }
     }
 
 
