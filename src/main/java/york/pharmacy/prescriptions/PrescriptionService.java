@@ -29,7 +29,13 @@ public class PrescriptionService {
     public PrescriptionResponse addPrescription(PrescriptionRequest prescriptionRequest) {
         Medicine medicine = serviceUtility.getMedicineByCode(prescriptionRequest.getMedicineCode()); // need to add this method
         Prescription prescription = PrescriptionMapper.toEntity(prescriptionRequest, medicine);
+
         Prescription savedPrescription = prescriptionRepository.save(prescription);
+
+        Long medicineId = medicine.getId();
+        Long prescriptionId = prescription.getId();
+        serviceUtility.checkAndUpdatePrescriptionStock(medicineId, prescriptionId);
+
         return PrescriptionMapper.toResponse(savedPrescription);
     }
 

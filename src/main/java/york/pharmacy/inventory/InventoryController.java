@@ -2,6 +2,7 @@ package york.pharmacy.inventory;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -9,19 +10,17 @@ import org.springframework.web.bind.annotation.*;
 import york.pharmacy.inventory.dto.InventoryRequest;
 import york.pharmacy.inventory.dto.InventoryResponse;
 import york.pharmacy.inventory.dto.InventoryUpdateRequest;
+import york.pharmacy.utilities.ServiceUtility;
 
 import java.util.List;
 
 @Validated
 @RestController
 @RequestMapping("/api/inventory")
+@RequiredArgsConstructor
 public class InventoryController {
 
     private final InventoryService inventoryService;
-
-    public InventoryController(InventoryService inventoryService) {
-        this.inventoryService = inventoryService;
-    }
 
     @PostMapping
     public ResponseEntity<InventoryResponse> createOne(@Valid @RequestBody InventoryRequest request) {
@@ -53,16 +52,20 @@ public class InventoryController {
             @Valid @RequestBody InventoryUpdateRequest request
     ) {
         InventoryResponse response = inventoryService.updateInventoryStock(id, request);
+
         return ResponseEntity.ok(response);
     }
 
     // Endpoint for pharmacists to manually add an amount of pills,
-    // and for "prescriptions" and "orders" tables to auto-adjust
+    // and for "prescriptions" and "orders" tables to auto-adjust;
+    // Front-end doesn't use this endpoint, so can probably delete
     @PutMapping("/{id}/adjust-stock/{pillAdjustment}")
     public ResponseEntity<InventoryResponse> adjustStockQuantity(
             @PathVariable Long id,
             @PathVariable Integer pillAdjustment) {
+        // Update stock in db
         InventoryResponse response = inventoryService.adjustStockQuantity(id, pillAdjustment);
+
         return ResponseEntity.ok(response);
     }
 

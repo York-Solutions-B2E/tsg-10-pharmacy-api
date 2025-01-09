@@ -121,8 +121,13 @@ public class InventoryService {
         Inventory existingEntity = inventoryRepository.findById(id)
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Inventory not found with id: " + id));
+        int newQuantity = request.getStockQuantity();
+        existingEntity.setStockQuantity(newQuantity);
 
-        existingEntity.setStockQuantity(request.getStockQuantity());
+        // Now update all prescriptions associated with that stock
+        Long medicineId = existingEntity.getId();
+        serviceUtility.updatePrescriptionsWithNewStock(newQuantity, medicineId);
+
         Inventory updatedEntity = inventoryRepository.save(existingEntity);
         return InventoryMapper.toResponse(updatedEntity);
     }
@@ -144,6 +149,9 @@ public class InventoryService {
             throw new IllegalArgumentException("Cannot reduce stock below 0");
         }
         existingEntity.setStockQuantity(newQuantity);
+
+        Long medicineId = existingEntity.getMedicine().getId();
+        serviceUtility.updatePrescriptionsWithNewStock(newQuantity, medicineId);
 
         Inventory updatedEntity = inventoryRepository.save(existingEntity);
         return InventoryMapper.toResponse(updatedEntity);
