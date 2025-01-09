@@ -9,6 +9,8 @@ import york.pharmacy.prescriptions.dto.PrescriptionRequest;
 import york.pharmacy.prescriptions.dto.PrescriptionResponse;
 import york.pharmacy.prescriptions.dto.PrescriptionStatusRequest;
 
+import york.pharmacy.utilities.ServiceUtility;
+
 import java.util.List;
 
 @RestController
@@ -17,11 +19,18 @@ import java.util.List;
 public class PrescriptionController {
 
     private final PrescriptionService prescriptionService;
+    private final ServiceUtility serviceUtility;
 
-    // create a new prescription
     @PostMapping
     public ResponseEntity<PrescriptionResponse> createPrescription(@Valid @RequestBody PrescriptionRequest prescriptionRequest) {
         PrescriptionResponse prescriptionResponse = prescriptionService.addPrescription(prescriptionRequest);
+
+        // Get the medicine ID from the prescription response
+        Long medicineId = prescriptionResponse.getMedicine().getId();
+
+        // Check and update stock status
+        serviceUtility.checkAndUpdatePrescriptionStock(medicineId, prescriptionResponse.getId());
+
         return new ResponseEntity<>(prescriptionResponse, HttpStatus.CREATED);
     }
 

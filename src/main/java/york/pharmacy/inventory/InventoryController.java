@@ -2,6 +2,7 @@ package york.pharmacy.inventory;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -16,15 +17,11 @@ import java.util.List;
 @Validated
 @RestController
 @RequestMapping("/api/inventory")
+@RequiredArgsConstructor
 public class InventoryController {
 
     private final InventoryService inventoryService;
     private final ServiceUtility serviceUtility;
-
-    public InventoryController(InventoryService inventoryService, ServiceUtility serviceUtility) {
-        this.inventoryService = inventoryService;
-        this.serviceUtility = serviceUtility;
-    }
 
     @PostMapping
     public ResponseEntity<InventoryResponse> createOne(@Valid @RequestBody InventoryRequest request) {

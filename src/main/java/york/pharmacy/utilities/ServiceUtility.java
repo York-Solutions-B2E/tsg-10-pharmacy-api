@@ -194,6 +194,45 @@ public class ServiceUtility {
         }
     }
 
+    /**
+     * Checks if there is sufficient inventory for prescriptions and updates status accordingly
+     * @param medicineId The ID of the medicine to check
+     * @param prescriptionId The ID of the new prescription to check
+     * @return true if sufficient stock available, false if insufficient
+     */
+    public boolean checkAndUpdatePrescriptionStock(Long medicineId, Long prescriptionId) {
+        // Get relevant prescription statuses
+        List<PrescriptionStatus> statuses = List.of(
+                PrescriptionStatus.NEW,
+                PrescriptionStatus.OUT_OF_STOCK,
+                PrescriptionStatus.STOCK_RECEIVED
+        );
+
+        // Get total quantity needed for all relevant prescriptions
+        int totalQuantityNeeded = prescriptionRepository.findTotalQuantityByMedicineIdAndStatus(
+                medicineId,
+                statuses
+        );
+
+        // Get current inventory
+        Inventory inventory = inventoryRepository.findByMedicineId(medicineId)
+                .orElseThrow(() -> new ResourceNotFoundException("Inventory not found for medicine ID: " + medicineId));
+
+        int currentStock = inventory.getStockQuantity();
+
+        // If stock is insufficient, mark only the new prescription as OUT_OF_STOCK
+        if (currentStock < totalQuantityNeeded) {
+            Prescription newPrescription = prescriptionRepository.findById(prescriptionId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Prescription not found with ID: " + prescriptionId));
+
+            newPrescription.setStatus(PrescriptionStatus.OUT_OF_STOCK);
+            prescriptionRepository.save(newPrescription);
+            return false;
+        }
+
+        return true;
+    }
+
 
     //    // send med id, total count of active prescriptions for that medicine
     // include STOCK_RECEIVED
