@@ -15,6 +15,7 @@ import york.pharmacy.prescriptions.dto.PrescriptionRequest;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.UUID;
 
 @Component
 public class DataInitializer implements CommandLineRunner {
@@ -137,14 +138,14 @@ public class DataInitializer implements CommandLineRunner {
         System.out.println("Prescriptions Seeded.");
     }
 
-    // Generates IDs in the range 700000–799999
-    private long generateRandomPatientId() {
-        return 700000 + (long) (Math.random() * 100000);
+    private String generateRandomPatientId() {
+        return "PID-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+        // Generates a random string like "PID-1A2B3C4D"
     }
 
-    // Generates numbers in the range 800000–899999
-    private long generateRandomPrescriptionNumber() {
-        return 800000 + (long) (Math.random() * 100000);
+    private String generateRandomPrescriptionNumber() {
+        return "RX-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+        // Generates a random string like "RX-5E6F7G8H"
     }
     private void seedOrders() {
         System.out.println("Seeding Orders...");
