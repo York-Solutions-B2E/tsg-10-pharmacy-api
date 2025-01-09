@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import york.pharmacy.inventory.dto.InventoryRequest;
 import york.pharmacy.inventory.dto.InventoryResponse;
 import york.pharmacy.inventory.dto.InventoryUpdateRequest;
+import york.pharmacy.utilities.ServiceUtility;
 
 import java.util.List;
 
@@ -18,9 +19,11 @@ import java.util.List;
 public class InventoryController {
 
     private final InventoryService inventoryService;
+    private final ServiceUtility serviceUtility;
 
-    public InventoryController(InventoryService inventoryService) {
+    public InventoryController(InventoryService inventoryService, ServiceUtility serviceUtility) {
         this.inventoryService = inventoryService;
+        this.serviceUtility = serviceUtility;
     }
 
     @PostMapping
@@ -62,7 +65,14 @@ public class InventoryController {
     public ResponseEntity<InventoryResponse> adjustStockQuantity(
             @PathVariable Long id,
             @PathVariable Integer pillAdjustment) {
+        // Update stock in db
         InventoryResponse response = inventoryService.adjustStockQuantity(id, pillAdjustment);
+        // Now update all prescriptions associated with that stock
+        serviceUtility.updatePrescriptionsWithNewStock(
+                response.getStockQuantity(),
+                response.getMedicine().getId()
+        );
+
         return ResponseEntity.ok(response);
     }
 

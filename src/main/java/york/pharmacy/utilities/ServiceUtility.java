@@ -9,7 +9,6 @@ import york.pharmacy.inventory.InventoryRepository;
 import york.pharmacy.inventory.dto.InventoryResponse;
 import york.pharmacy.medicines.Medicine;
 import york.pharmacy.medicines.MedicineRepository;
-import york.pharmacy.medicines.MedicineService;
 import york.pharmacy.orders.Order;
 import york.pharmacy.orders.OrderRepository;
 import york.pharmacy.prescriptions.Prescription;
@@ -142,6 +141,59 @@ public class ServiceUtility {
 
         return prescriptionRepository.findTotalQuantityByMedicineIdAndStatus(medicineId, statuses);
     }
+
+    //  ----------
+    //  cross-entity method
+    //  -----------
+
+    /**
+     * Update the inventory's stock quantity to the given value, then update
+     * all prescriptions (that are currently in {@link PrescriptionStatus#NEW} or
+     * {@link PrescriptionStatus#OUT_OF_STOCK}) to {@link PrescriptionStatus#STOCK_RECEIVED}
+     * as long as there is enough stock to fulfill them. Decrement the stock
+     * quantity as you go. Break out when you're out of stock.
+     *
+     * @param newStockQuantity an updated total number of pills in the inventory.
+     * @param medicineId       the primary key (ID) of the Medicine table.
+     */
+    public void updatePrescriptionsWithNewStock(int newStockQuantity, Long medicineId) {
+
+        // Are these the right statuses?
+        List<PrescriptionStatus> statusesToUpdate = List.of(
+                PrescriptionStatus.NEW,
+                PrescriptionStatus.OUT_OF_STOCK,
+                PrescriptionStatus.AWAITING_SHIPMENT
+        );
+        List<Prescription> pendingPrescriptions =
+                prescriptionRepository.findAllByMedicineIdAndStatus(medicineId, statusesToUpdate);
+
+        // Decrement from newStockQuantity as we fulfill prescriptions
+        int currentStock = newStockQuantity;
+        for (Prescription p : pendingPrescriptions) {
+            int pillsNeeded = p.getQuantity();
+
+            // If no more stock is left, break early
+            if (currentStock <= 0) {
+                break;
+            }
+
+            if (pillsNeeded <= currentStock) {
+                p.setStatus(PrescriptionStatus.STOCK_RECEIVED);
+                prescriptionRepository.save(p);
+
+                // Decrement the "currentStock"
+                currentStock -= pillsNeeded;
+
+                Long inventoryId = inventoryRepository.findById(medicineId).get().getId();
+
+                // Update the Inventory each time (more DB writes, but safer)
+                inventoryRepository.setStockQuantity(inventoryId, currentStock);
+            } else {
+            // Skip this prescription since we can't fill it completely
+            }
+        }
+    }
+
 
     //    // send med id, total count of active prescriptions for that medicine
     // include STOCK_RECEIVED
