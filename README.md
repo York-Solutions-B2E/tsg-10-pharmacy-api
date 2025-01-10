@@ -107,40 +107,40 @@ Create a file in root called "pgadmin_db_seed_list.json".
 ```mermaid
 erDiagram
     MEDICINE {
-        int id PK
+        Long id PK
         string name
         string code
+        timestamp createdAt
+        timestamp updatedAt
     }
     INVENTORY {
-        int id PK
-        int medicine_id FK
+        Long id PK
+        Long medicine_id FK
         int stock_quantity
     }
-    PRESCRIPTION_MANAGEMENT {
-        int id PK
-        long prescription_id
-        int medicine_id FK
-        long patient_id
+    PRESCRIPTION {
+        Long id PK
+        string patientId
+        Long medicine_id FK
+        string prescriptionNumber
         int quantity
         string instructions
         string status
+        Long order_id FK
     }
     ORDERS {
-        int id PK
-        int medicine_id FK
+        Long id PK
+        Long inventory_id FK
+        int quantity
         date delivery_date
         string status
+        timestamp createdAt
+        timestamp updatedAt
     }
 
     MEDICINE ||--|| INVENTORY : "is stocked in"
-    MEDICINE ||--o{ PRESCRIPTION_MANAGEMENT : "is prescribed in"
-    MEDICINE ||--o{ ORDERS : "is ordered in"
-```
-
-
-# System Architecture
-[Back to Table of Contents](#table-of-contents)
-```mermaid
-
+    MEDICINE ||--o{ PRESCRIPTION : "is prescribed in"
+    INVENTORY ||--o{ ORDERS : "is linked to"
+    PRESCRIPTION ||--|| ORDERS : "is fulfilled by"
 ```
 
