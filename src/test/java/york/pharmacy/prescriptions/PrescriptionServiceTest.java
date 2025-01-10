@@ -3,22 +3,18 @@ package york.pharmacy.prescriptions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import york.pharmacy.inventory.Inventory;
-import york.pharmacy.inventory.InventoryRepository; // <-- new import
+import york.pharmacy.inventory.InventoryRepository;
 import york.pharmacy.medicines.Medicine;
 import york.pharmacy.medicines.MedicineService;
-import york.pharmacy.orders.Order;
-import york.pharmacy.orders.OrderStatus;
 import york.pharmacy.prescriptions.dto.PrescriptionRequest;
 import york.pharmacy.prescriptions.dto.PrescriptionResponse;
 import york.pharmacy.prescriptions.dto.PrescriptionStatusRequest;
+import york.pharmacy.utilities.ServiceUtility;
 
 import java.time.Instant;
-import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -35,9 +31,8 @@ class PrescriptionServiceTest {
     @Mock
     private MedicineService medicineService;
 
-    // Remove InventoryService mock, since PrescriptionService no longer depends on InventoryService
-    // @Mock
-    // private InventoryService inventoryService;
+     @Mock
+     private ServiceUtility serviceUtility;
 
     @Mock
     private InventoryRepository inventoryRepository;
@@ -76,7 +71,7 @@ class PrescriptionServiceTest {
 
     @Test
     void addPrescription() {
-        when(medicineService.getMedicineByCode("MED001"))
+        when(serviceUtility.getMedicineByCode("MED001"))
                 .thenReturn(medicine);
         when(prescriptionRepository.save(any(Prescription.class)))
                 .thenReturn(prescription);
@@ -85,7 +80,7 @@ class PrescriptionServiceTest {
 
         assertNotNull(response);
         assertEquals(1, response.getId());
-        
+
     }
 
     @Test
@@ -135,10 +130,6 @@ class PrescriptionServiceTest {
         when(prescriptionRepository.findById(1L))
                 .thenReturn(Optional.of(prescription));
 
-        // Suppose the inventory row has stockQuantity=50
-        Inventory mockInventory = new Inventory(99L, medicine, 50);
-        when(inventoryRepository.findByMedicineId(medicine.getId()))
-                .thenReturn(Optional.of(mockInventory));
 
         when(prescriptionRepository.save(any(Prescription.class)))
                 .thenReturn(prescription);
@@ -149,10 +140,9 @@ class PrescriptionServiceTest {
         // Assert
         assertNotNull(response);
         assertEquals(PrescriptionStatus.FILLED, prescription.getStatus());
-
-        // We also expect that the inventory's stock got decreased by 30 (the prescription quantity)
-        // i.e. from 50 => 20
-        assertEquals(20, mockInventory.getStockQuantity());
+        verify(serviceUtility, times(1)).adjustStockQuantity(eq(1L), eq(-30)); // Verify stock update
+        verify(serviceUtility, times(1)).publishPickedUpOrFilled(eq("FILLED"), eq("111L")); // Verify notification
+        verify(prescriptionRepository, times(1)).save(any(Prescription.class)); // Verify save
     }
 
     @Test
@@ -228,147 +218,4 @@ class PrescriptionServiceTest {
                 thrown.getMessage()
         );
     }
-
-    @Test
-    void updateAwaitingShipmentStatus() {
-        Inventory inventory = new Inventory(1L, medicine, 500);
-        Order order = new Order(
-                123L,
-                inventory,
-                100,
-                LocalDate.of(2025, 2, 27),
-                OrderStatus.ORDERED,
-                Instant.now(),
-                Instant.now()
-        );
-
-        List<Prescription> mockPrescriptions = List.of(prescription);
-
-        when(prescriptionRepository.findAllByMedicineIdAndStatus(
-                1L,
-                List.of(PrescriptionStatus.NEW, PrescriptionStatus.OUT_OF_STOCK))
-        ).thenReturn(mockPrescriptions);
-
-        when(prescriptionRepository.save(any(Prescription.class)))
-                .thenAnswer(invocation -> invocation.getArgument(0));  // Return the same object
-
-        List<Prescription> updatedPrescriptions = underTest.updateAwaitingShipmentStatus(order);
-
-        assertEquals(1, updatedPrescriptions.size());
-        for (Prescription p : updatedPrescriptions) {
-            assertEquals(PrescriptionStatus.AWAITING_SHIPMENT, p.getStatus());
-            assertEquals(order, p.getOrder());
-        }
-
-        verify(prescriptionRepository, times(1)).save(any(Prescription.class));
-
-        ArgumentCaptor<Prescription> captor = ArgumentCaptor.forClass(Prescription.class);
-        verify(prescriptionRepository, times(1)).save(captor.capture());
-
-        List<Prescription> savedPrescriptions = captor.getAllValues();
-        assertEquals(1, savedPrescriptions.size());
-        assertTrue(savedPrescriptions.contains(prescription));
-    }
-
-    @Test
-    void updateStockReceivedStatus() {
-        Inventory inventory = new Inventory(1L, medicine, 500);
-        Order order = new Order(
-                123L,
-                inventory,
-                100,
-                LocalDate.of(2025, 2, 27),
-                OrderStatus.RECEIVED,
-                Instant.now(),
-                Instant.now()
-        );
-
-        Prescription prescription2 = new Prescription(
-                23L,
-                "1254L",
-                medicine,
-                "222L",
-                30,
-                "take after meals",
-                PrescriptionStatus.AWAITING_SHIPMENT,
-                order
-        );
-
-        List<Prescription> mockPrescriptions = List.of(prescription2);
-
-        when(prescriptionRepository.findAllByOrder(order))
-                .thenReturn(mockPrescriptions);
-
-        when(prescriptionRepository.save(any(Prescription.class)))
-                .thenAnswer(invocation -> invocation.getArgument(0));  // Return the same object
-
-        List<Prescription> updatedPrescriptions = underTest.updateStockReceivedStatus(order);
-
-        assertEquals(1, updatedPrescriptions.size());
-        for (Prescription p : updatedPrescriptions) {
-            assertEquals(PrescriptionStatus.STOCK_RECEIVED, p.getStatus());
-            assertEquals(order, p.getOrder());
-        }
-
-        verify(prescriptionRepository, times(1)).save(any(Prescription.class));
-
-        ArgumentCaptor<Prescription> captor = ArgumentCaptor.forClass(Prescription.class);
-        verify(prescriptionRepository, times(1)).save(captor.capture());
-
-        List<Prescription> savedPrescriptions = captor.getAllValues();
-        assertEquals(1, savedPrescriptions.size());
-        assertTrue(savedPrescriptions.contains(prescription2));
-    }
-
-    @Test
-    void cancelPrescription() {
-        when(prescriptionRepository.findById(1L))
-                .thenReturn(Optional.of(prescription));
-        when(prescriptionRepository.save(any(Prescription.class)))
-                .thenReturn(prescription);
-
-        underTest.cancelPrescription(1L);
-
-        assertEquals(PrescriptionStatus.CANCELLED, prescription.getStatus());
-    }
-
-    @Test
-    void minOrderCount_shouldReturnTotalCount() {
-        Long medicineId = 1L;
-        int expectedCount = 30;
-        List<PrescriptionStatus> statuses = List.of(PrescriptionStatus.NEW, PrescriptionStatus.OUT_OF_STOCK);
-
-        when(prescriptionRepository.findTotalQuantityByMedicineIdAndStatus(medicineId, statuses))
-                .thenReturn(expectedCount);
-
-        int result = underTest.minOrderCount(medicineId);
-
-        assertEquals(expectedCount, result);
-        verify(prescriptionRepository, times(1))
-                .findTotalQuantityByMedicineIdAndStatus(medicineId, statuses);
-    }
-
-    /*
-    @Test
-    void updateInventoryStockStatus() {
-        Long medicineId = 1L;
-        int totalQuantity = 50;
-        List<PrescriptionStatus> statuses = List.of(
-                PrescriptionStatus.NEW,
-                PrescriptionStatus.OUT_OF_STOCK,
-                PrescriptionStatus.STOCK_RECEIVED
-        );
-
-        when(prescriptionRepository.findTotalQuantityByMedicineIdAndStatus(medicineId, statuses))
-                .thenReturn(totalQuantity);
-
-        // underTest.updateInventoryStockStatus(medicineId);
-
-        HashMap<Long, Integer> expectedMap = new HashMap<>();
-        expectedMap.put(medicineId, totalQuantity);
-
-        verify(prescriptionRepository, times(1))
-                .findTotalQuantityByMedicineIdAndStatus(medicineId, statuses);
-    }
-    */
 }

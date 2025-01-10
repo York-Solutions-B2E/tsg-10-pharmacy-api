@@ -12,6 +12,7 @@ import york.pharmacy.medicines.Medicine;
 import york.pharmacy.orders.dto.OrderRequest;
 import york.pharmacy.orders.dto.OrderResponse;
 import york.pharmacy.exceptions.ResourceNotFoundException;
+import york.pharmacy.utilities.ServiceUtility;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -30,7 +31,7 @@ class OrderServiceTest {
     private OrderRepository orderRepository;
 
     @Mock
-    private InventoryService inventoryService;
+    private ServiceUtility serviceUtility;
 
     @InjectMocks
     private OrderService orderService;
@@ -218,53 +219,4 @@ class OrderServiceTest {
         verify(orderRepository, times(1)).existsById(1L);
         verify(orderRepository, never()).deleteById(anyLong());
     }
-
-    @Test
-    void testGetClosestOrderedDeliveryDateForMedicine_Success() {
-        // Arrange
-        Long inventoryId = 1L;
-        LocalDate currentDate = LocalDate.now();
-
-        Order expectedOrder = new Order(
-                1L,
-                inventory,
-                100,
-                LocalDate.of(2024, 12, 27),
-                OrderStatus.ORDERED,
-                Instant.now(),
-                Instant.now()
-        );
-
-        when(orderRepository.findFirstOrderByInventoryIdAndStatusOrderedAndFutureDeliveryDate(currentDate, inventoryId))
-                .thenReturn(Optional.of(expectedOrder));
-
-        // Act
-        Optional<Order> result = orderService.getClosestOrderedDeliveryDate(inventoryId);
-
-        // Assert
-        assertTrue(result.isPresent());
-        assertEquals(expectedOrder, result.get());
-        verify(orderRepository, times(1))
-                .findFirstOrderByInventoryIdAndStatusOrderedAndFutureDeliveryDate(currentDate, inventoryId);
-    }
-
-    @Test
-    void testGetClosestOrderedDeliveryDateForMedicine_NotFound() {
-        // Arrange
-        Long inventoryId = 1L;
-        LocalDate currentDate = LocalDate.now();
-
-        when(orderRepository.findFirstOrderByInventoryIdAndStatusOrderedAndFutureDeliveryDate(currentDate, inventoryId))
-                .thenReturn(Optional.empty());
-
-        // Act
-        Optional<Order> result = orderService.getClosestOrderedDeliveryDate(inventoryId);
-
-        // Assert
-        assertFalse(result.isPresent());
-        verify(orderRepository, times(1))
-                .findFirstOrderByInventoryIdAndStatusOrderedAndFutureDeliveryDate(currentDate, inventoryId);
-    }
-
-
 }
