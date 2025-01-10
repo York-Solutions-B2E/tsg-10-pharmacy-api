@@ -199,13 +199,7 @@ public class ServiceUtility {
         int currentStock = inventory.getStockQuantity();
 
         // If stock is insufficient, mark only the new prescription as OUT_OF_STOCK
-        if (currentStock < totalQuantityNeeded) {
-            Prescription newPrescription = prescriptionRepository.findById(prescriptionId)
-                    .orElseThrow(() -> new ResourceNotFoundException("Prescription not found with ID: " + prescriptionId));
-            return false;
-        }
-
-        return true;
+        return currentStock >= totalQuantityNeeded;
     }
 
     /**

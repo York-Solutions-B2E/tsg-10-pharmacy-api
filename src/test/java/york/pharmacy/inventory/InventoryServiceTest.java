@@ -1,5 +1,6 @@
 package york.pharmacy.inventory;
 
+import org.junit.jupiter.api.Disabled;
 import org.springframework.dao.DataIntegrityViolationException;
 import york.pharmacy.inventory.dto.InventoryRequest;
 import york.pharmacy.inventory.dto.InventoryResponse;
@@ -10,10 +11,12 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import york.pharmacy.inventory.dto.InventoryUpdateRequest;
 import york.pharmacy.medicines.Medicine;
 import york.pharmacy.medicines.MedicineService;
 import york.pharmacy.orders.OrderService;
 import york.pharmacy.prescriptions.PrescriptionService;
+import york.pharmacy.utilities.ServiceUtility;
 
 import java.time.Instant;
 import java.util.Arrays;
@@ -31,13 +34,7 @@ class InventoryServiceTest {
     private InventoryRepository inventoryRepository;
 
     @Mock
-    private MedicineService medicineService;
-
-    @Mock
-    private OrderService orderService;
-
-    @Mock
-    private PrescriptionService prescriptionService;
+    private ServiceUtility serviceUtility;
 
     @InjectMocks
     private InventoryService inventoryService;
@@ -139,7 +136,7 @@ class InventoryServiceTest {
                 .build();
 
         when(inventoryRepository.findById(testId)).thenReturn(Optional.of(testInventory));
-        when(prescriptionService.minOrderCount(testMedicineId)).thenReturn(neededPills);
+        when(serviceUtility.minOrderCount(testMedicineId)).thenReturn(neededPills);
 
         // When
         InventoryResponse result = inventoryService.getInventoryById(testId);
@@ -157,7 +154,7 @@ class InventoryServiceTest {
 
         // Verify repository and service calls
         verify(inventoryRepository, times(1)).findById(testId);
-        verify(prescriptionService, times(1)).minOrderCount(testMedicineId);
+        verify(serviceUtility, times(1)).minOrderCount(testMedicineId);
     }
 
     @Test
@@ -180,7 +177,7 @@ class InventoryServiceTest {
                 .build();
 
         when(inventoryRepository.findAll()).thenReturn(Arrays.asList(inventory1, inventory2));
-        when(prescriptionService.minOrderCount(medicine.getId()))
+        when(serviceUtility.minOrderCount(medicine.getId()))
                 .thenReturn(neededPills1, neededPills2); // Different required pills for each inventory
 
         // When
@@ -206,7 +203,7 @@ class InventoryServiceTest {
 
         // Verify repository and service calls
         verify(inventoryRepository, times(1)).findAll();
-        verify(prescriptionService, times(2)).minOrderCount(medicine.getId());
+        verify(serviceUtility, times(2)).minOrderCount(medicine.getId());
     }
 
     @Test
@@ -260,6 +257,40 @@ class InventoryServiceTest {
     }
 
     @Test
+    @DisplayName("Should update the stock quantity of an Inventory by Id")
+    void testUpdateInventoryStock() {
+        // Arrange
+        InventoryUpdateRequest updateRequest = InventoryUpdateRequest.builder()
+                .stockQuantity(100)
+                .build();
+
+        Inventory existingInventory = Inventory.builder()
+                .id(1L)
+                .medicine(medicine)
+                .stockQuantity(50)
+                .build();
+
+        Inventory updatedInventory = Inventory.builder()
+                .id(1L)
+                .medicine(medicine)
+                .stockQuantity(100)
+                .build();
+
+        when(inventoryRepository.findById(1L)).thenReturn(Optional.of(existingInventory));
+        when(inventoryRepository.save(any(Inventory.class))).thenReturn(updatedInventory);
+
+        // Act
+        InventoryResponse response = inventoryService.updateInventoryStock(1L, updateRequest);
+
+        // Assert
+        assertNotNull(response, "Response should not be null");
+        assertEquals(100, response.getStockQuantity(), "Stock quantity should be updated to 100");
+        verify(inventoryRepository).findById(1L);
+        verify(serviceUtility).updatePrescriptionsWithNewStock(100, 1L);
+        verify(inventoryRepository).save(existingInventory);
+    }
+
+    @Test
     @DisplayName("Should delete an existing Inventory by Id")
     void testDeleteInventory() {
         // Given
@@ -302,7 +333,7 @@ class InventoryServiceTest {
 
         // Mock repository and service behavior
         when(inventoryRepository.findById(testId)).thenReturn(Optional.of(inventoryInDb));
-        when(prescriptionService.minOrderCount(medicine.getId())).thenReturn(neededPills);
+        when(serviceUtility.minOrderCount(medicine.getId())).thenReturn(neededPills);
 
         // When
         InventoryResponse result = inventoryService.getInventoryById(testId);
@@ -316,7 +347,7 @@ class InventoryServiceTest {
 
         // Verify repository was queried
         verify(inventoryRepository).findById(testId);
-        verify(prescriptionService).minOrderCount(medicine.getId());
+        verify(serviceUtility).minOrderCount(medicine.getId());
     }
 
     @Test
@@ -332,7 +363,7 @@ class InventoryServiceTest {
 
         // Mock repository and service behavior
         when(inventoryRepository.findById(testId)).thenReturn(Optional.of(inventoryInDb));
-        when(prescriptionService.minOrderCount(medicine.getId())).thenReturn(neededPills);
+        when(serviceUtility.minOrderCount(medicine.getId())).thenReturn(neededPills);
 
         // When
         InventoryResponse result = inventoryService.getInventoryById(testId);
@@ -346,7 +377,7 @@ class InventoryServiceTest {
 
         // Verify repository was queried
         verify(inventoryRepository).findById(testId);
-        verify(prescriptionService).minOrderCount(medicine.getId());
+        verify(serviceUtility).minOrderCount(medicine.getId());
     }
 
 
