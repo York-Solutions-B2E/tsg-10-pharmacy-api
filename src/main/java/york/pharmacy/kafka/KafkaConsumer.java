@@ -33,7 +33,8 @@ public class KafkaConsumer {
         System.out.println("Received Event: " + event.getEventType() + " - " + event.getPrescriptionId());
         if (event.getEventType().equals("NEW_PRESCRIPTION")) {
             PrescriptionRequest request = new PrescriptionRequest();
-            request.setPatientId(event.getPrescriptionId());
+            // We originally accidentally set this to the prescriptionId
+            request.setPatientId(event.getPatientId());
             request.setPrescriptionNumber(event.getPrescriptionId());
             request.setMedicineCode(event.getMedicineCode());
             request.setQuantity(event.getQuantity());
