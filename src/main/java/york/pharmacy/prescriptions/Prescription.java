@@ -27,7 +27,7 @@ public class Prescription {
     private Medicine medicine;
 
     @NotNull
-    @Column(updatable = false)
+    @Column(updatable = false, unique = true)
     private String prescriptionNumber;
 
     @NotNull
