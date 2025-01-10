@@ -16,6 +16,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import york.pharmacy.inventory.dto.InventoryRequest;
 import york.pharmacy.inventory.dto.InventoryResponse;
+import york.pharmacy.inventory.dto.InventoryUpdateRequest;
 import york.pharmacy.medicines.Medicine;
 
 import java.time.Instant;
@@ -23,6 +24,7 @@ import java.util.Arrays;
 
 import static org.hamcrest.Matchers.is;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -88,7 +90,6 @@ class InventoryControllerTest {
     }
 
     @Test
-    @Disabled
     @DisplayName("Create one Inventory -> POST /api/inventory")
     void testCreateOne() throws Exception {
         BDDMockito.given(inventoryService.createInventory(ArgumentMatchers.any(InventoryRequest.class)))
@@ -104,14 +105,12 @@ class InventoryControllerTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id", is(1)))
-                // Changed this to match the nested Medicine object
                 .andExpect(jsonPath("$.medicine.id", is(1)))
                 .andExpect(jsonPath("$.stockQuantity", is(100)))
                 .andExpect(jsonPath("$.sufficientStock", is(false)));
     }
 
     @Test
-    @Disabled
     @DisplayName("Create many Inventories -> POST /api/inventory/bulk")
     void testCreateMany() throws Exception {
         BDDMockito.given(inventoryService.createManyInventories(ArgumentMatchers.anyList()))
@@ -144,7 +143,6 @@ class InventoryControllerTest {
     }
 
     @Test
-    @Disabled
     @DisplayName("Read one Inventory -> GET /api/inventory/{id}")
     void testGetOne() throws Exception {
         BDDMockito.given(inventoryService.getInventoryById(testId))
@@ -159,7 +157,6 @@ class InventoryControllerTest {
     }
 
     @Test
-    @Disabled
     @DisplayName("Read many Inventories -> GET /api/inventory")
     void testGetAll() throws Exception {
         BDDMockito.given(inventoryService.getAllInventories())
@@ -181,7 +178,6 @@ class InventoryControllerTest {
     }
 
     @Test
-    @Disabled
     @DisplayName("Update an existing Inventory -> PUT /api/inventory/{id}")
     void testUpdate() throws Exception {
 
@@ -193,19 +189,19 @@ class InventoryControllerTest {
                         // Keep the same medicine object or at least same ID
                         new Medicine(testMedicineId, "Jelly Beans", "J-01", Instant.now(), Instant.now())
                 )
-                .stockQuantity(99)      // changed from 100
+                .stockQuantity(99)// changed from 100
                 .sufficientStock(true)
+                .minimumOrderCount(0)
                 .build();
 
         // Mock service layer
-        BDDMockito.given(inventoryService.updateInventory(
+        BDDMockito.given(inventoryService.updateInventoryStock(
                         ArgumentMatchers.eq(testId),
-                        ArgumentMatchers.any(InventoryRequest.class)))
+                        ArgumentMatchers.any(InventoryUpdateRequest.class)))
                 .willReturn(updatedResponse);
 
         // This represents the HTTP request body that a client would send
-        InventoryRequest updateRequest = InventoryRequest.builder()
-                .medicineId(2L)         // attempt to change medicineId, but service ignores it
+        InventoryUpdateRequest updateRequest = InventoryUpdateRequest.builder()
                 .stockQuantity(99)
                 .build();
 
@@ -214,14 +210,12 @@ class InventoryControllerTest {
                         .content(objectMapper.writeValueAsString(updateRequest)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id", is(1)))
-                // Should remain the original medicine ID in the DB (or the one in updatedResponse)
                 .andExpect(jsonPath("$.medicine.id", is(1)))
                 .andExpect(jsonPath("$.stockQuantity", is(99)))
                 .andExpect(jsonPath("$.sufficientStock", is(true)));
     }
 
     @Test
-    @Disabled
     @DisplayName("Adjust stock quantity -> PUT /api/inventory/{id}/adjust-stock/{pillAdjustment}")
     void testAdjustStockQuantity() throws Exception {
         // Set up expected response after adjustment
